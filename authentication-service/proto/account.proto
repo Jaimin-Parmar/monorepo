@@ -1,0 +1,54 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+package account;
+
+option go_package = "proto/v1/account";
+
+message CredentialsRequest {
+  string user_name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message Thumbnails {
+  string small = 1;
+  string medium = 2;
+  string large = 3;
+  string icon = 4;
+  string original = 5;
+}
+
+message AccountPermission {
+  int32 account_id = 1;
+  string company = 2;
+  bool is_owner = 3;
+  bool has_api_access = 4;
+}
+
+message AccountReply {
+  int32 id = 1;
+  int32 account_type = 2;
+  string user_name = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string photo = 6;
+  Thumbnails thumbs = 7;
+  string email = 8;
+  string recovery_email = 9;
+  string phone = 10;
+  string password = 11;
+  google.protobuf.Timestamp create_date = 12;
+  google.protobuf.Timestamp last_modified_date = 13;
+  string token = 14;
+  repeated AccountPermission accounts = 15;
+  bool is_active = 16;
+  string reset_token = 17;
+  bool reset_status = 18;
+  google.protobuf.Timestamp reset_time = 19;
+}
+
+
+service AccountService {
+    rpc AuthAccount(CredentialsRequest) returns (AccountReply) {}
+}
