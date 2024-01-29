@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"people-service/app"
 	"people-service/model"
-	acProtobuf "people-service/proto/v1/account"
+	acProtobuf "people-service/proto/v1/pb/account"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/any"

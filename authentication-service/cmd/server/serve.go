@@ -4,8 +4,8 @@ import (
 	"authentication-service/api"
 	"authentication-service/app"
 	"authentication-service/grpcservice"
-	acProtobuf "authentication-service/proto/v1/account"
-	authProtobuf "authentication-service/proto/v1/authentication"
+	acProtobuf "authentication-service/proto/v1/pb/account"
+	authProtobuf "authentication-service/proto/v1/pb/authentication"
 	"authentication-service/util"
 	"context"
 	"fmt"
@@ -149,7 +149,7 @@ func serveGrpc(ctx context.Context, app *app.App) {
 		s.GracefulStop()
 		close(done)
 	}()
-	logrus.Infof("people-service GRPC STARTED at http://127.0.0.1:%d", 8084)
+	logrus.Infof("authentication-service GRPC STARTED at http://127.0.0.1:%d", 8084)
 	if err := s.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

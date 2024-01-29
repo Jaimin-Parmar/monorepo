@@ -7,7 +7,7 @@ import (
 	"authentication-service/model"
 	"time"
 
-	acProtobuf "authentication-service/proto/v1/account"
+	acProtobuf "authentication-service/proto/v1/pb/account"
 
 	"github.com/dgrijalva/jwt-go"
 )

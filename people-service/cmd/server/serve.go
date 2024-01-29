@@ -11,7 +11,7 @@ import (
 	"people-service/api"
 	"people-service/app"
 	"people-service/grpcservice"
-	acProtobuf "people-service/proto/v1/account"
+	acProtobuf "people-service/proto/v1/pb/account"
 	"people-service/util"
 	"sync"
 	"time"

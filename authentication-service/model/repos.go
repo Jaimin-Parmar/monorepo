@@ -4,7 +4,7 @@ import (
 	"authentication-service/cache"
 	"authentication-service/database"
 	"authentication-service/mongodatabase"
-	acProtobuf "authentication-service/proto/v1/account"
+	acProtobuf "authentication-service/proto/v1/pb/account"
 )
 
 // Repos container to hold handles for cache / db repos

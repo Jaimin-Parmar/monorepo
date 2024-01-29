@@ -2,8 +2,8 @@ package grpcservice
 
 import (
 	"authentication-service/app"
-	acProtobuf "authentication-service/proto/v1/account"
-	authProtobuf "authentication-service/proto/v1/authentication"
+	acProtobuf "authentication-service/proto/v1/pb/account"
+	authProtobuf "authentication-service/proto/v1/pb/authentication"
 	"context"
 	"errors"
 
