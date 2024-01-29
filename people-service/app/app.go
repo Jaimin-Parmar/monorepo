@@ -1,6 +1,9 @@
 package app
 
 import (
+	appStorage "people-service/app/storage"
+	"people-service/storage"
+
 	"github.com/sirupsen/logrus"
 
 	"people-service/app/account"
@@ -22,12 +25,14 @@ type App struct {
 	Repos          *model.Repos
 	AccountService account.Service
 	ProfileService profile.Service
+	StorageService appStorage.Service
 }
 
 // NewContext create new request context
 func (a *App) NewContext() *Context {
 	return &Context{
-		Logger: logrus.StandardLogger(),
+		Logger:         logrus.StandardLogger(),
+		StorageService: a.StorageService,
 	}
 }
 
@@ -63,11 +68,28 @@ func New() (app *App, err error) {
 		return nil, err
 	}
 
+	storageConf, err := storage.InitConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	fileStore, err := storage.New(storageConf)
+	if err != nil {
+		return nil, err
+	}
+
+	tmpStore, err := storage.NewTmp()
+	if err != nil {
+		return nil, err
+	}
+
 	repos := &model.Repos{
-		MasterDB:  masterDB,
-		ReplicaDB: replicaDB,
-		Cache:     cache.New(cacheConf),
-		MongoDB:   mongoDBConf,
+		MasterDB:   masterDB,
+		ReplicaDB:  replicaDB,
+		Storage:    fileStore,
+		TmpStorage: tmpStore,
+		Cache:      cache.New(cacheConf),
+		MongoDB:    mongoDBConf,
 	}
 
 	return &App{
@@ -75,6 +97,7 @@ func New() (app *App, err error) {
 		Repos:          repos,
 		AccountService: account.NewService(repos, appConf),
 		ProfileService: profile.NewService(repos, appConf),
+		StorageService: appStorage.NewService(repos, appConf),
 	}, nil
 }
 

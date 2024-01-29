@@ -11,6 +11,7 @@ import (
 
 	"people-service/database"
 
+	"people-service/app/storage"
 	"people-service/model"
 )
 
@@ -24,27 +25,32 @@ type Service interface {
 	FetchCachedAccount(id int) (*model.Account, error)
 	GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error)
 	VerifyLink(token string) (map[string]interface{}, error)
-	// ForgotPassword(userEmail string) (map[string]interface{}, error)
-	// ResetPassword(payload *model.ResetPassword) (map[string]interface{}, error)
-	// SetAccountType(payload *model.SetAccountType) (map[string]interface{}, error)
+	ForgotPassword(userEmail string) (map[string]interface{}, error)
+	ResetPassword(payload *model.ResetPassword) (map[string]interface{}, error)
+	SetAccountType(payload *model.SetAccountType) (map[string]interface{}, error)
+	FetchAccountInformation(accountID int) (map[string]interface{}, error)
+	FetchAccountServices(account model.Account) (map[string]interface{}, error)
+	VerifyPin(pin map[string]interface{}) (map[string]interface{}, error)
 }
 
 type service struct {
-	config       *config.Config
-	dbMaster     *database.Database
-	dbReplica    *database.Database
-	cache        *cache.Cache
-	emailService email.Service
+	config         *config.Config
+	dbMaster       *database.Database
+	dbReplica      *database.Database
+	cache          *cache.Cache
+	emailService   email.Service
+	storageService storage.Service
 }
 
 // NewService create new AccountService
 func NewService(repos *model.Repos, conf *config.Config) Service {
 	svc := &service{
-		config:       conf,
-		dbMaster:     repos.MasterDB,
-		dbReplica:    repos.ReplicaDB,
-		cache:        repos.Cache,
-		emailService: email.NewService(),
+		config:         conf,
+		dbMaster:       repos.MasterDB,
+		dbReplica:      repos.ReplicaDB,
+		cache:          repos.Cache,
+		emailService:   email.NewService(),
+		storageService: storage.NewService(repos, conf),
 	}
 	return svc
 }
@@ -124,14 +130,26 @@ func (s *service) VerifyLink(token string) (map[string]interface{}, error) {
 	return verifyLink(s.dbMaster, s.emailService, token)
 }
 
-// func (s *service) ForgotPassword(userEmail string) (map[string]interface{}, error) {
-// 	return forgotPassword(s.dbMaster, s.emailService, userEmail)
-// }
+func (s *service) ForgotPassword(userEmail string) (map[string]interface{}, error) {
+	return forgotPassword(s.dbMaster, s.emailService, userEmail)
+}
 
-// func (s *service) ResetPassword(payload *model.ResetPassword) (map[string]interface{}, error) {
-// 	return resetPassword(s.dbMaster, s.emailService, payload)
-// }
+func (s *service) ResetPassword(payload *model.ResetPassword) (map[string]interface{}, error) {
+	return resetPassword(s.dbMaster, s.emailService, payload)
+}
 
-// func (s *service) SetAccountType(payload *model.SetAccountType) (map[string]interface{}, error) {
-// 	return setAccountType(s.dbMaster, s.storageService, payload)
-// }
+func (s *service) SetAccountType(payload *model.SetAccountType) (map[string]interface{}, error) {
+	return setAccountType(s.dbMaster, s.storageService, payload)
+}
+
+func (s *service) FetchAccountInformation(userID int) (map[string]interface{}, error) {
+	return fetchAccountInformation(s.dbMaster, userID)
+}
+
+func (s *service) FetchAccountServices(user model.Account) (map[string]interface{}, error) {
+	return fetchAccountServices(s.dbMaster, user)
+}
+
+func (s *service) VerifyPin(pin map[string]interface{}) (map[string]interface{}, error) {
+	return verifyPin(s.dbMaster, pin)
+}

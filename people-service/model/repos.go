@@ -8,8 +8,10 @@ import (
 
 // Repos container to hold handles for cache / db repos
 type Repos struct {
-	MasterDB  *database.Database
-	ReplicaDB *database.Database
-	Cache     *cache.Cache
-	MongoDB   *mongodatabase.DBConfig
+	MasterDB   *database.Database
+	ReplicaDB  *database.Database
+	Cache      *cache.Cache
+	MongoDB    *mongodatabase.DBConfig
+	Storage    FileStorage
+	TmpStorage FileStorage
 }

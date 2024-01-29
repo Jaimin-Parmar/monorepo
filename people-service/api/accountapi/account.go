@@ -6,6 +6,7 @@ import (
 	"people-service/app"
 	"people-service/model"
 	"people-service/util"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -95,79 +96,79 @@ func (a *api) VerifyLink(ctx *app.Context, w http.ResponseWriter, r *http.Reques
 	return err
 }
 
-// // ForgotPassword - Here we send reset password link on the recipient email
-// func (a *api) ForgotPassword(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var payload struct {
-// 		Email string `json:"email" db:"email"`
-// 	}
-// 	err := json.NewDecoder(r.Body).Decode(&payload)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	res, err := a.accountService.ForgotPassword(payload.Email)
-// 	if err == nil {
-// 		json.NewEncoder(w).Encode(res)
-// 		return nil
-// 	}
-// 	return err
-// }
+// ForgotPassword - Here we send reset password link on the recipient email
+func (a *api) ForgotPassword(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload struct {
+		Email string `json:"email" db:"email"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		return err
+	}
+	res, err := a.accountService.ForgotPassword(payload.Email)
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+	return err
+}
 
-// // ResetPassword
-// func (a *api) ResetPassword(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var payload *model.ResetPassword
-// 	err := json.NewDecoder(r.Body).Decode(&payload)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	res, err := a.accountService.ResetPassword(payload)
-// 	if err == nil {
-// 		json.NewEncoder(w).Encode(res)
-// 		return nil
-// 	}
-// 	return err
-// }
+// ResetPassword
+func (a *api) ResetPassword(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload *model.ResetPassword
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		return err
+	}
+	res, err := a.accountService.ResetPassword(payload)
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+	return err
+}
 
-// // SetAccountType
-// func (a *api) SetAccountType(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var payload *model.SetAccountType
-// 	err := json.NewDecoder(r.Body).Decode(&payload)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	payload.AccountId = strconv.Itoa(ctx.User.ID)
-// 	res, err := a.accountService.SetAccountType(payload)
-// 	if err == nil {
-// 		json.NewEncoder(w).Encode(res)
-// 		return nil
-// 	}
-// 	return err
-// }
+// SetAccountType
+func (a *api) SetAccountType(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload *model.SetAccountType
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		return err
+	}
+	payload.AccountId = strconv.Itoa(ctx.User.ID)
+	res, err := a.accountService.SetAccountType(payload)
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+	return err
+}
 
-// func (a *api) FetchAccountServices(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var err error
-// 	var res map[string]interface{}
+func (a *api) FetchAccountServices(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var err error
+	var res map[string]interface{}
 
-// 	accInfo, err := a.accountService.FetchAccountInformation(ctx.User.ID)
-// 	if err == nil {
-// 		res, err = a.accountService.FetchAccountServices(accInfo["data"].(model.Account))
-// 	}
-// 	if err == nil {
-// 		json.NewEncoder(w).Encode(res)
-// 	}
+	accInfo, err := a.accountService.FetchAccountInformation(ctx.User.ID)
+	if err == nil {
+		res, err = a.accountService.FetchAccountServices(accInfo["data"].(model.Account))
+	}
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+	}
 
-// 	return err
-// }
+	return err
+}
 
-// func (a *api) VerifyPin(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var payload map[string]interface{}
-// 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-// 		return errors.Wrap(err, "unable to parse input")
-// 	}
+func (a *api) VerifyPin(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		return errors.Wrap(err, "unable to parse input")
+	}
 
-// 	res, err := a.accountService.VerifyPin(payload)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	json.NewEncoder(w).Encode(res)
-// 	return nil
-// }
+	res, err := a.accountService.VerifyPin(payload)
+	if err != nil {
+		return err
+	}
+	json.NewEncoder(w).Encode(res)
+	return nil
+}

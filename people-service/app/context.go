@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"people-service/app/storage"
 	"people-service/model"
 
 	"github.com/sirupsen/logrus"
@@ -11,13 +12,14 @@ import (
 
 // Context per request state
 type Context struct {
-	Logger        logrus.FieldLogger
-	RemoteAddress string
-	User          *model.Account
-	SignupUser    *model.AccountSignup
-	Profile       int
-	Vars          map[string]string
-	ResourceID    int
+	Logger         logrus.FieldLogger
+	RemoteAddress  string
+	User           *model.Account
+	SignupUser     *model.AccountSignup
+	StorageService storage.Service
+	Profile        int
+	Vars           map[string]string
+	ResourceID     int
 }
 
 // WithLogger sets logger for context
