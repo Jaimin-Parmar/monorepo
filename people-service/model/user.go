@@ -37,7 +37,7 @@ type Account struct {
 	IsActive         bool                  `json:"isActive" db:"isActive"`
 	ResetToken       string                `json:"resetToken" db:"resetToken"`
 	ResetStatus      bool                  `json:"resetStatus" db:"resetStatus"`
-	ResetTime        time.Time             `json:"resetTime" db:"resetTime"`
+	ResetTime        []uint8               `json:"resetTime" db:"resetTime"`
 }
 
 type RegistrationUser struct {

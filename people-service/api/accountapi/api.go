@@ -3,6 +3,7 @@ package accountapi
 import (
 	"people-service/api/common"
 	"people-service/app/account"
+	"people-service/app/email"
 	"people-service/cache"
 	"people-service/model"
 )
@@ -12,6 +13,7 @@ type api struct {
 	config         *common.Config
 	cache          *cache.Cache
 	accountService account.Service
+	emailService   email.Service
 }
 
 // New creates a new api

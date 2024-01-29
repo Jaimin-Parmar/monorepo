@@ -6,10 +6,8 @@ import (
 	"people-service/app"
 	"people-service/model"
 	acProtobuf "people-service/proto/v1/pb/account"
-	"time"
 
 	"github.com/golang/protobuf/ptypes/any"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 )
 
 type AccountServer struct {
@@ -17,6 +15,7 @@ type AccountServer struct {
 	App *app.App
 }
 
+// AuthAccount mehtod is verify account credentials.
 func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *acProtobuf.CredentialsRequest) (*acProtobuf.AccountReply, error) {
 	req := model.Credentials{}
 	req.Email = reqdata.Email
@@ -28,35 +27,13 @@ func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *acProtobuf.Cre
 		return nil, err
 	}
 
-	thumbs := acProtobuf.Thumbnails{}
-	thumbs.Small = accountData.Thumbs.Small
-	thumbs.Medium = accountData.Thumbs.Medium
-	thumbs.Large = accountData.Thumbs.Large
-	thumbs.Icon = accountData.Thumbs.Icon
-	thumbs.Original = accountData.Thumbs.Original
-
 	return &acProtobuf.AccountReply{
-		Id:               int32(accountData.ID),
-		AccountType:      int32(accountData.AccountType),
-		UserName:         accountData.UserName,
-		FirstName:        accountData.FirstName,
-		LastName:         accountData.LastName,
-		Photo:            accountData.Photo,
-		Thumbs:           &thumbs,
-		Email:            accountData.Email,
-		RecoveryEmail:    accountData.RecoveryEmail,
-		Phone:            accountData.Phone,
-		Password:         accountData.Password,
-		CreateDate:       converTimeToTimestamp(accountData.CreateDate),
-		LastModifiedDate: converTimeToTimestamp(accountData.LastModifiedDate),
-		Token:            accountData.Token,
-		Accounts:         ConvertProtobufAccounts(accountData.Accounts),
-		IsActive:         accountData.IsActive,
-		ResetStatus:      accountData.ResetStatus,
-		ResetTime:        converTimeToTimestamp(accountData.ResetTime),
+		Id:    int32(accountData.ID),
+		Email: accountData.Email,
 	}, nil
 }
 
+// GetAccountDetails is get account details based on accountID
 func (s *AccountServer) GetAccountDetails(ctx context.Context, reqdata *acProtobuf.AccountDetailRequest) (*acProtobuf.GenericReply, error) {
 	accountData, err := s.App.AccountService.FetchAccount(int(reqdata.AccountId), true)
 	if err != nil {
@@ -79,6 +56,7 @@ func (s *AccountServer) GetAccountDetails(ctx context.Context, reqdata *acProtob
 	}, nil
 }
 
+// ValidateProfile is validate profile with account.
 func (s *AccountServer) ValidateProfile(ctx context.Context, reqdata *acProtobuf.ValidateProfileRequest) (*acProtobuf.GenericReply, error) {
 	err := s.App.ProfileService.ValidateProfile(int(reqdata.ProfileId), int(reqdata.AccountId))
 	if err != nil {
@@ -92,29 +70,6 @@ func (s *AccountServer) ValidateProfile(ctx context.Context, reqdata *acProtobuf
 	}, nil
 }
 
-func converTimeToTimestamp(timedata time.Time) *timestamp.Timestamp {
-	return &timestamp.Timestamp{
-		Seconds: timedata.Unix(),
-		Nanos:   int32(timedata.Nanosecond()),
-	}
-}
-
-func ConvertProtobufAccounts(aps []*model.AccountPermimssion) []*acProtobuf.AccountPermission {
-	rap := make([]*acProtobuf.AccountPermission, 0)
-	for _, obj := range aps {
-		tmp := acProtobuf.AccountPermission{}
-		tmp.AccountId = int32(obj.AccountID)
-		tmp.Company = obj.Company
-		tmp.HasApiAccess = obj.HasAPIAccess
-		tmp.IsOwner = obj.IsOwner
-		rap = append(rap, &tmp)
-	}
-	return rap
-}
-
 func convertDataToBytes(data interface{}) ([]byte, error) {
-	// Implement the logic to serialize YourModelData to bytes
-	// For example, you can use encoding/json, encoding/gob, or other serialization methods
-	// Here, we'll use a simple JSON encoding for demonstration purposes
 	return json.Marshal(data)
 }

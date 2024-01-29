@@ -7,6 +7,8 @@ import (
 	"people-service/model"
 	"people-service/util"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Pong Api
@@ -60,38 +62,38 @@ func (a *api) CreateAccount(ctx *app.Context, w http.ResponseWriter, r *http.Req
 	return err
 }
 
-// func (a *api) GetVerificationCode(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var payload model.RegistrationUser
-// 	err := json.NewDecoder(r.Body).Decode(&payload)
-// 	if err != nil {
-// 		return errors.Wrap(err, "unable to decode payload json")
-// 	}
+func (a *api) GetVerificationCode(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload model.RegistrationUser
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		return errors.Wrap(err, "unable to decode payload json")
+	}
 
-// 	if payload.Type == "email" {
-// 		res, err := a.accountService.GetVerificationCode(payload.ID, payload.Email)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		json.NewEncoder(w).Encode(res)
-// 	}
-// 	return nil
-// }
+	if payload.Type == "email" {
+		res, err := a.accountService.GetVerificationCode(payload.ID, payload.Email)
+		if err != nil {
+			return err
+		}
+		json.NewEncoder(w).Encode(res)
+	}
+	return nil
+}
 
-// func (a *api) VerifyLink(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-// 	var payload struct {
-// 		Token string `json:"token" db:"token"`
-// 	}
-// 	err := json.NewDecoder(r.Body).Decode(&payload)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	res, err := a.accountService.VerifyLink(payload.Token)
-// 	if err == nil {
-// 		json.NewEncoder(w).Encode(res)
-// 		return nil
-// 	}
-// 	return err
-// }
+func (a *api) VerifyLink(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload struct {
+		Token string `json:"token" db:"token"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		return err
+	}
+	res, err := a.accountService.VerifyLink(payload.Token)
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+	return err
+}
 
 // // ForgotPassword - Here we send reset password link on the recipient email
 // func (a *api) ForgotPassword(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {

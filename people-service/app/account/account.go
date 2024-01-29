@@ -2,11 +2,14 @@ package account
 
 import (
 	"fmt"
+	"people-service/app/email"
 	"people-service/cache"
 	"people-service/database"
 	"people-service/model"
 	"people-service/util"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -114,141 +117,141 @@ func createAccount(db *database.Database, user model.AccountSignup) (map[string]
 	return util.SetResponse(resData, 1, "Account created successfully"), nil
 }
 
-// func getVerificationCode(db *database.Database, emailService email.Service, userID int, emailID string) (map[string]interface{}, error) {
-// 	code, err := util.EncodeToString(6)
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "unable to generate code")
-// 	}
-// 	var user model.AccountSignup
-// 	user.VerificationCode = code
-// 	user.ID = userID
-// 	stmt := "UPDATE `sidekiq-dev`.AccountSignup SET verificationCode = :verificationCode WHERE id = :id;"
-// 	_, err = db.Conn.NamedExec(stmt, user)
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "unable to update verification code for user")
-// 	}
+func getVerificationCode(db *database.Database, emailService email.Service, userID int, emailID string) (map[string]interface{}, error) {
+	code, err := util.EncodeToString(6)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to generate code")
+	}
+	var user model.AccountSignup
+	user.VerificationCode = code
+	user.ID = userID
+	stmt := "UPDATE `sidekiq-dev`.AccountSignup SET verificationCode = :verificationCode WHERE id = :id;"
+	_, err = db.Conn.NamedExec(stmt, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to update verification code for user")
+	}
 
-// 	// send email
-// 	email := model.Email{}
-// 	email.Sender = "donotreply@otp.sidekiq.com" // don't hardcode, use default.yaml
-// 	email.Receiver = emailID
-// 	email.Subject = "Please Verify Your Email"
-// 	email.HtmlBody = fmt.Sprintf(`<h3>Hey,<br>
-// 		A sign in attempt requires further verification because we did not recognize your Email.
-// 		To complete the sign in, enter the verification code on the given Email.<br><br>Verification Code: <b>%s</b></h3>`, code)
-// 	email.TextBody = fmt.Sprintf("Hey. A sign in attempt requires further verification because we did not recognize your Email. To complete the sign in, enter the verification code on the given Email. Verification code: %s", code)
-// 	err = emailService.SendEmail(email)
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "unable to send email for reset password")
-// 	}
+	// send email
+	email := model.Email{}
+	email.Sender = "donotreply@otp.sidekiq.com" // don't hardcode, use default.yaml
+	email.Receiver = emailID
+	email.Subject = "Please Verify Your Email"
+	email.HtmlBody = fmt.Sprintf(`<h3>Hey,<br>
+		A sign in attempt requires further verification because we did not recognize your Email.
+		To complete the sign in, enter the verification code on the given Email.<br><br>Verification Code: <b>%s</b></h3>`, code)
+	email.TextBody = fmt.Sprintf("Hey. A sign in attempt requires further verification because we did not recognize your Email. To complete the sign in, enter the verification code on the given Email. Verification code: %s", code)
+	err = emailService.SendEmail(email)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to send email for reset password")
+	}
 
-// 	// err = sendEmailService(userID, emailID, code, false)
-// 	// if err != nil {
-// 	// 	return nil, errors.Wrap(err, "unable to send verification code to user using SES")
-// 	// }
+	// err = sendEmailService(userID, emailID, code, false)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "unable to send verification code to user using SES")
+	// }
 
-// 	res := make(map[string]interface{})
-// 	resData := make(map[string]interface{})
-// 	resData["code"] = code
-// 	resData["status"] = 1
-// 	resData["message"] = "Verification code sent successfully"
-// 	res["data"] = resData
-// 	return resData, nil
-// }
+	res := make(map[string]interface{})
+	resData := make(map[string]interface{})
+	resData["code"] = code
+	resData["status"] = 1
+	resData["message"] = "Verification code sent successfully"
+	res["data"] = resData
+	return resData, nil
+}
 
-// func verifyLink(db *database.Database, emailService email.Service, token string) (map[string]interface{}, error) {
-// 	response := make(map[string]interface{})
-// 	user := []*model.Account{}
+func verifyLink(db *database.Database, emailService email.Service, token string) (map[string]interface{}, error) {
+	response := make(map[string]interface{})
+	user := []*model.Account{}
 
-// 	// check if password already saved using the link
-// 	// fetchstmt := "SELECT * FROM `sidekiq-dev`.Account WHERE resetToken = ?"
-// 	fetchstmt := `SELECT
-// 		id, accountType, createDate, lastModifiedDate, isActive,
-// 		IFNULL(firstName, "") as firstName,
-// 		IFNULL(lastName, "") as lastName,
-// 		IFNULL(userName, "") as userName,
-// 		IFNULL(email, "") as email,
-// 		IFNULL(phone, "") as phone,
-// 		IFNULL(recoveryEmail, "") as recoveryEmail,
-// 		IFNULL(resetStatus, "") as resetStatus,
-// 		IFNULL(resetTime, "") as resetTime
+	// check if password already saved using the link
+	// fetchstmt := "SELECT * FROM `sidekiq-dev`.Account WHERE resetToken = ?"
+	fetchstmt := `SELECT
+		id, accountType, createDate, lastModifiedDate, isActive,
+		IFNULL(firstName, "") as firstName,
+		IFNULL(lastName, "") as lastName,
+		IFNULL(userName, "") as userName,
+		IFNULL(email, "") as email,
+		IFNULL(phone, "") as phone,
+		IFNULL(recoveryEmail, "") as recoveryEmail,
+		IFNULL(resetStatus, "") as resetStatus,
+		IFNULL(resetTime, "") as resetTime
 
-// 		FROM` + "`sidekiq-dev`.Account WHERE resetToken = ?"
+		FROM` + "`sidekiq-dev`.Account WHERE resetToken = ?"
 
-// 	err := db.Conn.Select(&user, fetchstmt, token)
-// 	if err != nil {
-// 		response = util.SetResponse(nil, 0, "Error in processing request")
-// 		return response, err
-// 	}
+	err := db.Conn.Select(&user, fetchstmt, token)
+	if err != nil {
+		response = util.SetResponse(nil, 0, "Error in processing request")
+		return response, err
+	}
 
-// 	if (len(user)) == 1 {
-// 		// password not saved using this link but link may have expired
-// 		uniqueUser := user[0]
-// 		resetStatus := uniqueUser.ResetStatus
-// 		currentTime := time.Now()
-// 		expireTime := currentTime.Add(-time.Minute * 10)
+	if (len(user)) == 1 {
+		// password not saved using this link but link may have expired
+		uniqueUser := user[0]
+		resetStatus := uniqueUser.ResetStatus
+		currentTime := time.Now()
+		expireTime := currentTime.Add(-time.Minute * 10)
 
-// 		resetTime, err := time.Parse("2006-01-02 15:04:05", string(uniqueUser.ResetTime))
-// 		if err != nil {
-// 			response = util.SetResponse(nil, 0, "Error in processing request")
-// 			return response, err
-// 		}
+		resetTime, err := time.Parse("2006-01-02 15:04:05", string(uniqueUser.ResetTime))
+		if err != nil {
+			response = util.SetResponse(nil, 0, "Error in processing request")
+			return response, err
+		}
 
-// 		// check if password not set using this token already and link is valid
-// 		if resetStatus && !expireTime.After(resetTime) {
-// 			// return response to frontend
-// 			response = util.SetResponse(nil, 1, "Link Validation Completed successfully")
-// 		} else if resetStatus {
-// 			// generate uuid for sending email
-// 			uuid := uuid.New().String()
+		// check if password not set using this token already and link is valid
+		if resetStatus && !expireTime.After(resetTime) {
+			// return response to frontend
+			response = util.SetResponse(nil, 1, "Link Validation Completed successfully")
+		} else if resetStatus {
+			// generate uuid for sending email
+			uuid := uuid.New().String()
 
-// 			// db store
-// 			var payload struct {
-// 				Email string `json:"email" db:"email"`
-// 				UUID  string `json:"resetToken" db:"resetToken"`
-// 			}
-// 			payload.UUID = uuid
-// 			payload.Email = uniqueUser.Email
-// 			stmt := "UPDATE `sidekiq-dev`.Account SET resetToken=:resetToken, resetTime = now(), resetStatus = true WHERE email = :email;"
-// 			_, err := db.Conn.NamedExec(stmt, payload)
-// 			if err != nil {
-// 				response = util.SetResponse(nil, 0, "Error in processing request")
-// 				return response, err
-// 			}
+			// db store
+			var payload struct {
+				Email string `json:"email" db:"email"`
+				UUID  string `json:"resetToken" db:"resetToken"`
+			}
+			payload.UUID = uuid
+			payload.Email = uniqueUser.Email
+			stmt := "UPDATE `sidekiq-dev`.Account SET resetToken=:resetToken, resetTime = now(), resetStatus = true WHERE email = :email;"
+			_, err := db.Conn.NamedExec(stmt, payload)
+			if err != nil {
+				response = util.SetResponse(nil, 0, "Error in processing request")
+				return response, err
+			}
 
-// 			// create reset link
-// 			resetPageLink := "https://staging.sidekiq.com/reset-password/" // from frontend
-// 			link := resetPageLink + uuid
+			// create reset link
+			resetPageLink := "https://staging.sidekiq.com/reset-password/" // from frontend
+			link := resetPageLink + uuid
 
-// 			email := model.Email{}
-// 			email.Receiver = uniqueUser.Email
-// 			email.Header = "Sidekiq: Reset password link verfication"
-// 			email.Subject = "Link to reset password"
-// 			email.HtmlBody = fmt.Sprintf(`<h3>Hey,
-// 				<br>Please <a href="%s">click here</a> to reset your password.
-// 				The link will automatically expire after 10 minutes</h3>`, link)
-// 			email.TextBody = fmt.Sprintf(`Hey. Please <a href="%s">click here</a> to reset your password.
-// 				The link will automatically expire after 10 minutes`, link)
-// 			err = emailService.SendEmail(email)
-// 			if err != nil {
-// 				response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
-// 				return response, err
-// 			}
-// 			response = util.SetResponse(nil, 0, "This link has expired. A new link has been sent on your email")
+			email := model.Email{}
+			email.Receiver = uniqueUser.Email
+			email.Header = "Sidekiq: Reset password link verfication"
+			email.Subject = "Link to reset password"
+			email.HtmlBody = fmt.Sprintf(`<h3>Hey,
+				<br>Please <a href="%s">click here</a> to reset your password.
+				The link will automatically expire after 10 minutes</h3>`, link)
+			email.TextBody = fmt.Sprintf(`Hey. Please <a href="%s">click here</a> to reset your password.
+				The link will automatically expire after 10 minutes`, link)
+			err = emailService.SendEmail(email)
+			if err != nil {
+				response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
+				return response, err
+			}
+			response = util.SetResponse(nil, 0, "This link has expired. A new link has been sent on your email")
 
-// 			// send reset email
-// 			// err = sendEmailService(-1, uniqueUser.Email, link, true)
-// 			// if err != nil {
-// 			// 	response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
-// 			// 	return response, err
-// 			// }
-// 			// response = util.SetResponse(nil, 0, "This link has expired. A new link has been sent on your email")
-// 		}
-// 	} else {
-// 		response = util.SetResponse(nil, 0, "You can't reset password with this link.")
-// 	}
-// 	return response, nil
-// }
+			// send reset email
+			// err = sendEmailService(-1, uniqueUser.Email, link, true)
+			// if err != nil {
+			// 	response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
+			// 	return response, err
+			// }
+			// response = util.SetResponse(nil, 0, "This link has expired. A new link has been sent on your email")
+		}
+	} else {
+		response = util.SetResponse(nil, 0, "You can't reset password with this link.")
+	}
+	return response, nil
+}
 
 // func forgotPassword(db *database.Database, emailService email.Service, recipientEmail string) (map[string]interface{}, error) {
 // 	/* Flow -

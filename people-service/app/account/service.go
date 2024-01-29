@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"people-service/app/config"
+	"people-service/app/email"
 
 	"people-service/cache"
 
@@ -21,29 +22,29 @@ type Service interface {
 	FetchContacts(accountID int) ([]*model.Contact, error)
 	CreateAccount(account model.AccountSignup) (map[string]interface{}, error)
 	FetchCachedAccount(id int) (*model.Account, error)
-	// GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error)
-	// VerifyLink(token string) (map[string]interface{}, error)
+	GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error)
+	VerifyLink(token string) (map[string]interface{}, error)
 	// ForgotPassword(userEmail string) (map[string]interface{}, error)
 	// ResetPassword(payload *model.ResetPassword) (map[string]interface{}, error)
 	// SetAccountType(payload *model.SetAccountType) (map[string]interface{}, error)
 }
 
 type service struct {
-	config    *config.Config
-	dbMaster  *database.Database
-	dbReplica *database.Database
-	cache     *cache.Cache
-	// storageService storage.Service
-	// emailService   email.Service
+	config       *config.Config
+	dbMaster     *database.Database
+	dbReplica    *database.Database
+	cache        *cache.Cache
+	emailService email.Service
 }
 
 // NewService create new AccountService
 func NewService(repos *model.Repos, conf *config.Config) Service {
 	svc := &service{
-		config:    conf,
-		dbMaster:  repos.MasterDB,
-		dbReplica: repos.ReplicaDB,
-		cache:     repos.Cache,
+		config:       conf,
+		dbMaster:     repos.MasterDB,
+		dbReplica:    repos.ReplicaDB,
+		cache:        repos.Cache,
+		emailService: email.NewService(),
 	}
 	return svc
 }
@@ -115,13 +116,13 @@ func (s *service) CreateAccount(account model.AccountSignup) (map[string]interfa
 	return createAccount(s.dbMaster, account)
 }
 
-// func (s *service) GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error) {
-// 	return getVerificationCode(s.dbMaster, s.emailService, accountID, emailID)
-// }
+func (s *service) GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error) {
+	return getVerificationCode(s.dbMaster, s.emailService, accountID, emailID)
+}
 
-// func (s *service) VerifyLink(token string) (map[string]interface{}, error) {
-// 	return verifyLink(s.dbMaster, s.emailService, token)
-// }
+func (s *service) VerifyLink(token string) (map[string]interface{}, error) {
+	return verifyLink(s.dbMaster, s.emailService, token)
+}
 
 // func (s *service) ForgotPassword(userEmail string) (map[string]interface{}, error) {
 // 	return forgotPassword(s.dbMaster, s.emailService, userEmail)
