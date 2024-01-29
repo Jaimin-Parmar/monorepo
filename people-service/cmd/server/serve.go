@@ -11,7 +11,7 @@ import (
 	"people-service/api"
 	"people-service/app"
 	"people-service/grpcservice"
-	"people-service/protobuf"
+	acProtobuf "people-service/proto/v1/account"
 	"people-service/util"
 	"sync"
 	"time"
@@ -129,7 +129,7 @@ func serveGrpc(ctx context.Context, app *app.App) {
 	}
 
 	s := grpc.NewServer()
-	protobuf.RegisterAccountServiceServer(s, &grpcservice.AccountServer{
+	acProtobuf.RegisterAccountServiceServer(s, &grpcservice.AccountServer{
 		App: app,
 	})
 

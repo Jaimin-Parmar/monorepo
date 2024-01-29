@@ -2,21 +2,23 @@ package grpcservice
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"people-service/app"
 	"people-service/model"
-	"people-service/protobuf"
+	acProtobuf "people-service/proto/v1/account"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/any"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 )
 
 type AccountServer struct {
-	protobuf.AccountServiceServer
+	acProtobuf.AccountServiceServer
 	App *app.App
 }
 
-func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *protobuf.CredentialsRequest) (*protobuf.AccountReply, error) {
+func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *acProtobuf.CredentialsRequest) (*acProtobuf.AccountReply, error) {
 	fmt.Println("reqdata", reqdata)
 	req := model.Credentials{}
 	req.Email = reqdata.Email
@@ -28,14 +30,14 @@ func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *protobuf.Crede
 		return nil, err
 	}
 
-	thumbs := protobuf.Thumbnails{}
+	thumbs := acProtobuf.Thumbnails{}
 	thumbs.Small = accountData.Thumbs.Small
 	thumbs.Medium = accountData.Thumbs.Medium
 	thumbs.Large = accountData.Thumbs.Large
 	thumbs.Icon = accountData.Thumbs.Icon
 	thumbs.Original = accountData.Thumbs.Original
 
-	return &protobuf.AccountReply{
+	return &acProtobuf.AccountReply{
 		Id:               int32(accountData.ID),
 		AccountType:      int32(accountData.AccountType),
 		UserName:         accountData.UserName,
@@ -57,6 +59,28 @@ func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *protobuf.Crede
 	}, nil
 }
 
+func (s *AccountServer) GetCachedAccount(ctx context.Context, reqdata *acProtobuf.CachedAccountRequest) (*acProtobuf.GenericReply, error) {
+	accountData, err := s.App.AccountService.FetchCachedAccount(int(reqdata.AccountId))
+	if err != nil {
+		return nil, err
+	}
+
+	dataBytes, err := convertDataToBytes(accountData)
+	if err != nil {
+		return nil, err
+	}
+
+	dataAny := &any.Any{
+		Value: dataBytes,
+	}
+
+	return &acProtobuf.GenericReply{
+		Data:    dataAny,
+		Status:  1,
+		Message: "Account details",
+	}, nil
+}
+
 func converTimeToTimestamp(timedata time.Time) *timestamp.Timestamp {
 	return &timestamp.Timestamp{
 		Seconds: timedata.Unix(),
@@ -64,10 +88,10 @@ func converTimeToTimestamp(timedata time.Time) *timestamp.Timestamp {
 	}
 }
 
-func ConvertProtobufAccounts(aps []*model.AccountPermimssion) []*protobuf.AccountPermission {
-	rap := make([]*protobuf.AccountPermission, 0)
+func ConvertProtobufAccounts(aps []*model.AccountPermimssion) []*acProtobuf.AccountPermission {
+	rap := make([]*acProtobuf.AccountPermission, 0)
 	for _, obj := range aps {
-		tmp := protobuf.AccountPermission{}
+		tmp := acProtobuf.AccountPermission{}
 		tmp.AccountId = int32(obj.AccountID)
 		tmp.Company = obj.Company
 		tmp.HasApiAccess = obj.HasAPIAccess
@@ -75,4 +99,11 @@ func ConvertProtobufAccounts(aps []*model.AccountPermimssion) []*protobuf.Accoun
 		rap = append(rap, &tmp)
 	}
 	return rap
+}
+
+func convertDataToBytes(data interface{}) ([]byte, error) {
+	// Implement the logic to serialize YourModelData to bytes
+	// For example, you can use encoding/json, encoding/gob, or other serialization methods
+	// Here, we'll use a simple JSON encoding for demonstration purposes
+	return json.Marshal(data)
 }

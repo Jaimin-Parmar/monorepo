@@ -20,6 +20,7 @@ type Service interface {
 	FetchAccount(id int, skipCache bool) (*model.Account, error)
 	FetchContacts(accountID int) ([]*model.Contact, error)
 	CreateAccount(account model.AccountSignup) (map[string]interface{}, error)
+	FetchCachedAccount(id int) (*model.Account, error)
 	// GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error)
 	// VerifyLink(token string) (map[string]interface{}, error)
 	// ForgotPassword(userEmail string) (map[string]interface{}, error)

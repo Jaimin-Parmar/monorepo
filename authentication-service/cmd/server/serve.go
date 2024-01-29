@@ -3,10 +3,14 @@ package server
 import (
 	"authentication-service/api"
 	"authentication-service/app"
+	"authentication-service/grpcservice"
 	acProtobuf "authentication-service/proto/v1/account"
+	authProtobuf "authentication-service/proto/v1/authentication"
 	"authentication-service/util"
 	"context"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -53,6 +57,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	grpcctx, grpccancel := context.WithCancel(context.Background())
 
 	go func() {
 		defer util.RecoverGoroutinePanic(nil)
@@ -71,6 +76,14 @@ func run(cmd *cobra.Command, args []string) error {
 		defer wg.Done()
 		defer cancel()
 		serveAPI(ctx, api)
+	}()
+
+	wg.Add(2)
+	go func() {
+		defer util.RecoverGoroutinePanic(nil)
+		defer wg.Done()
+		defer grpccancel()
+		serveGrpc(grpcctx, app)
 	}()
 
 	wg.Wait()
@@ -113,5 +126,33 @@ func serveAPI(ctx context.Context, api *api.API) {
 	if err := s.ListenAndServe(); err != http.ErrServerClosed {
 		logrus.Fatal(err)
 	}
+	<-done
+}
+
+func serveGrpc(ctx context.Context, app *app.App) {
+
+	//Auth GRPC run on 8084 port
+	listener, err := net.Listen("tcp", ":8084")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	//Create grpc server and register methods.
+	s := grpc.NewServer()
+	authProtobuf.RegisterAuthServiceServer(s, &grpcservice.AuthServer{
+		App: app,
+	})
+
+	done := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		s.GracefulStop()
+		close(done)
+	}()
+	logrus.Infof("people-service GRPC STARTED at http://127.0.0.1:%d", 8084)
+	if err := s.Serve(listener); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
 	<-done
 }

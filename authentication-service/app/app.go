@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"authentication-service/app/config"
+	"authentication-service/app/jwtauth"
 
 	"authentication-service/cache"
 
@@ -16,8 +17,9 @@ import (
 
 // App our application
 type App struct {
-	Config *config.Config
-	Repos  *model.Repos
+	Config     *config.Config
+	Repos      *model.Repos
+	JwtService jwtauth.Service
 }
 
 // NewContext create new request context
@@ -67,8 +69,9 @@ func New() (app *App, err error) {
 	}
 
 	return &App{
-		Config: appConf,
-		Repos:  repos,
+		Config:     appConf,
+		Repos:      repos,
+		JwtService: jwtauth.NewService(repos, appConf),
 	}, nil
 }
 

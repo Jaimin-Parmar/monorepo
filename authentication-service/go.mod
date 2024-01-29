@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/SherClockHolmes/webpush-go v1.3.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis/v7 v7.4.1
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
