@@ -23,7 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccountServiceClient interface {
 	AuthAccount(ctx context.Context, in *CredentialsRequest, opts ...grpc.CallOption) (*AccountReply, error)
-	GetCachedAccount(ctx context.Context, in *CachedAccountRequest, opts ...grpc.CallOption) (*GenericReply, error)
+	GetAccountDetails(ctx context.Context, in *AccountDetailRequest, opts ...grpc.CallOption) (*GenericReply, error)
+	ValidateProfile(ctx context.Context, in *ValidateProfileRequest, opts ...grpc.CallOption) (*GenericReply, error)
 }
 
 type accountServiceClient struct {
@@ -43,9 +44,18 @@ func (c *accountServiceClient) AuthAccount(ctx context.Context, in *CredentialsR
 	return out, nil
 }
 
-func (c *accountServiceClient) GetCachedAccount(ctx context.Context, in *CachedAccountRequest, opts ...grpc.CallOption) (*GenericReply, error) {
+func (c *accountServiceClient) GetAccountDetails(ctx context.Context, in *AccountDetailRequest, opts ...grpc.CallOption) (*GenericReply, error) {
 	out := new(GenericReply)
-	err := c.cc.Invoke(ctx, "/account.AccountService/GetCachedAccount", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/account.AccountService/GetAccountDetails", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ValidateProfile(ctx context.Context, in *ValidateProfileRequest, opts ...grpc.CallOption) (*GenericReply, error) {
+	out := new(GenericReply)
+	err := c.cc.Invoke(ctx, "/account.AccountService/ValidateProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +67,8 @@ func (c *accountServiceClient) GetCachedAccount(ctx context.Context, in *CachedA
 // for forward compatibility
 type AccountServiceServer interface {
 	AuthAccount(context.Context, *CredentialsRequest) (*AccountReply, error)
-	GetCachedAccount(context.Context, *CachedAccountRequest) (*GenericReply, error)
+	GetAccountDetails(context.Context, *AccountDetailRequest) (*GenericReply, error)
+	ValidateProfile(context.Context, *ValidateProfileRequest) (*GenericReply, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -68,8 +79,11 @@ type UnimplementedAccountServiceServer struct {
 func (UnimplementedAccountServiceServer) AuthAccount(context.Context, *CredentialsRequest) (*AccountReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AuthAccount not implemented")
 }
-func (UnimplementedAccountServiceServer) GetCachedAccount(context.Context, *CachedAccountRequest) (*GenericReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCachedAccount not implemented")
+func (UnimplementedAccountServiceServer) GetAccountDetails(context.Context, *AccountDetailRequest) (*GenericReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccountDetails not implemented")
+}
+func (UnimplementedAccountServiceServer) ValidateProfile(context.Context, *ValidateProfileRequest) (*GenericReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateProfile not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 
@@ -102,20 +116,38 @@ func _AccountService_AuthAccount_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountService_GetCachedAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CachedAccountRequest)
+func _AccountService_GetAccountDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountDetailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountServiceServer).GetCachedAccount(ctx, in)
+		return srv.(AccountServiceServer).GetAccountDetails(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/account.AccountService/GetCachedAccount",
+		FullMethod: "/account.AccountService/GetAccountDetails",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetCachedAccount(ctx, req.(*CachedAccountRequest))
+		return srv.(AccountServiceServer).GetAccountDetails(ctx, req.(*AccountDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ValidateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ValidateProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/account.AccountService/ValidateProfile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ValidateProfile(ctx, req.(*ValidateProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,8 +164,12 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AccountService_AuthAccount_Handler,
 		},
 		{
-			MethodName: "GetCachedAccount",
-			Handler:    _AccountService_GetCachedAccount_Handler,
+			MethodName: "GetAccountDetails",
+			Handler:    _AccountService_GetAccountDetails_Handler,
+		},
+		{
+			MethodName: "ValidateProfile",
+			Handler:    _AccountService_ValidateProfile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

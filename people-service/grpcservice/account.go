@@ -3,7 +3,6 @@ package grpcservice
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"people-service/app"
 	"people-service/model"
 	acProtobuf "people-service/proto/v1/account"
@@ -19,7 +18,6 @@ type AccountServer struct {
 }
 
 func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *acProtobuf.CredentialsRequest) (*acProtobuf.AccountReply, error) {
-	fmt.Println("reqdata", reqdata)
 	req := model.Credentials{}
 	req.Email = reqdata.Email
 	req.Password = reqdata.Password
@@ -59,8 +57,8 @@ func (s *AccountServer) AuthAccount(ctx context.Context, reqdata *acProtobuf.Cre
 	}, nil
 }
 
-func (s *AccountServer) GetCachedAccount(ctx context.Context, reqdata *acProtobuf.CachedAccountRequest) (*acProtobuf.GenericReply, error) {
-	accountData, err := s.App.AccountService.FetchCachedAccount(int(reqdata.AccountId))
+func (s *AccountServer) GetAccountDetails(ctx context.Context, reqdata *acProtobuf.AccountDetailRequest) (*acProtobuf.GenericReply, error) {
+	accountData, err := s.App.AccountService.FetchAccount(int(reqdata.AccountId), true)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +76,19 @@ func (s *AccountServer) GetCachedAccount(ctx context.Context, reqdata *acProtobu
 		Data:    dataAny,
 		Status:  1,
 		Message: "Account details",
+	}, nil
+}
+
+func (s *AccountServer) ValidateProfile(ctx context.Context, reqdata *acProtobuf.ValidateProfileRequest) (*acProtobuf.GenericReply, error) {
+	err := s.App.ProfileService.ValidateProfile(int(reqdata.ProfileId), int(reqdata.AccountId))
+	if err != nil {
+		return nil, err
+	}
+
+	return &acProtobuf.GenericReply{
+		Data:    nil,
+		Status:  1,
+		Message: "Profile details are verified",
 	}, nil
 }
 

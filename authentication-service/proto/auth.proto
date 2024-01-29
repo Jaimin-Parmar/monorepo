@@ -7,7 +7,7 @@ option go_package = "proto/v1/authentication";
 
 message ValidateUserRequest {
   string token = 1;
-  string profileID = 2;
+  int32 profileID = 2;
 }
 
 message ValidateUserReply {

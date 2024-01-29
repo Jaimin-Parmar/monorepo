@@ -5,6 +5,7 @@ import (
 
 	"people-service/app/account"
 	"people-service/app/config"
+	"people-service/app/profile"
 
 	"people-service/cache"
 
@@ -20,6 +21,7 @@ type App struct {
 	Config         *config.Config
 	Repos          *model.Repos
 	AccountService account.Service
+	ProfileService profile.Service
 }
 
 // NewContext create new request context
@@ -72,6 +74,7 @@ func New() (app *App, err error) {
 		Config:         appConf,
 		Repos:          repos,
 		AccountService: account.NewService(repos, appConf),
+		ProfileService: profile.NewService(repos, appConf),
 	}, nil
 }
 
