@@ -153,11 +153,6 @@ func getVerificationCode(db *database.Database, emailService email.Service, user
 		return nil, errors.Wrap(err, "unable to send email for reset password")
 	}
 
-	// err = sendEmailService(userID, emailID, code, false)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "unable to send verification code to user using SES")
-	// }
-
 	res := make(map[string]interface{})
 	resData := make(map[string]interface{})
 	resData["code"] = code
@@ -246,14 +241,6 @@ func verifyLink(db *database.Database, emailService email.Service, token string)
 				return response, err
 			}
 			response = util.SetResponse(nil, 0, "This link has expired. A new link has been sent on your email")
-
-			// send reset email
-			// err = sendEmailService(-1, uniqueUser.Email, link, true)
-			// if err != nil {
-			// 	response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
-			// 	return response, err
-			// }
-			// response = util.SetResponse(nil, 0, "This link has expired. A new link has been sent on your email")
 		}
 	} else {
 		response = util.SetResponse(nil, 0, "You can't reset password with this link.")
@@ -319,14 +306,6 @@ func forgotPassword(db *database.Database, emailService email.Service, recipient
 			return util.SetResponse(nil, 0, "Unable to send reset link on your email"), err
 		}
 
-		// send reset email
-		// err = sendEmailService(-1, recipientEmail, link, true)
-		// if err != nil {
-		// 	response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
-		// 	return response, err
-		// }
-
-		// return response to frontend
 		return util.SetResponse(nil, 1, "Password reset link sent successfully"), nil
 	}
 
@@ -393,12 +372,6 @@ func resetPassword(db *database.Database, emailService email.Service, payload *m
 				return util.SetResponse(nil, 0, "Unable to send reset link on your email"), err
 			}
 
-			// send reset email
-			// err = sendEmailService(-1, payload.ResetToken, link, true)
-			// if err != nil {
-			// 	response = util.SetResponse(nil, 0, "Unable to send reset link on your email")
-			// 	return response, err
-			// }
 			return util.SetResponse(nil, 0, "This link has expired. A new link has sent on the given email ID"), nil
 		} else {
 			// save new password in DB based on resetToken and also set resetStatus to false since password should be set only once from this link.
@@ -596,4 +569,108 @@ func verifyPin(db *database.Database, payload map[string]interface{}) (map[strin
 		return errRes, nil
 	}
 	return util.SetResponse(nil, 1, "pin verified successfully"), nil
+}
+
+func setAccountInformation(db *database.Database, user model.Account, userID int) (map[string]interface{}, error) {
+
+	res := make(map[string]interface{})
+	resData := make(map[string]interface{})
+
+	fetchstmt := "SELECT COUNT(*) AS COUNT FROM `sidekiq-dev`.Account WHERE userName = ?"
+	var count *int64
+	uname := user.UserName
+	err := db.Conn.Get(&count, fetchstmt, uname)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(err, "	", *count, "	", uname)
+	if (*count) != 0 {
+		res["status"] = 0
+		res["message"] = "Account associated with this username already exists."
+		res["data"] = nil
+		return res, nil
+	}
+
+	fmt.Println("346:")
+	signupuser := &model.AccountSignup{}
+	stmt := "SELECT id, email, phone FROM `sidekiq-dev`.AccountSignup WHERE id = ?;"
+	err = db.Conn.Get(signupuser, stmt, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch user")
+	}
+
+	user.Email = signupuser.Email
+	user.Phone = signupuser.Phone
+	user.AccountType = 1
+	user.CreateDate = time.Now()
+	stmt = "INSERT INTO `sidekiq-dev`.Account (email, accountType, recoveryEmail, phone, firstName, lastName, password, userName, photo) VALUES(:email, :accountType, :recoveryEmail, :phone, :firstName, :lastName, :password, :userName, :photo)"
+	r, err := db.Conn.NamedExec(stmt, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to insert user")
+	}
+	id, _ := r.LastInsertId()
+	stmt = "DELETE FROM `sidekiq-dev`.AccountSignup WHERE id = :id;"
+	_, err = db.Conn.NamedExec(stmt, signupuser)
+	if err != nil {
+		return nil, err
+	}
+
+	user.ID = int(id)
+	resData["token"] = ""
+	res["data"] = map[string]interface{}{
+		"id":        user.ID,
+		"userName":  user.UserName,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"email":     user.Email,
+		"phone":     user.Phone,
+	}
+	res["status"] = 1
+	res["message"] = "Your account has been created successfully."
+
+	fmt.Println("newly created account: ", res["data"].(map[string]interface{})["id"].(int))
+	return res, nil
+}
+
+func updateAccountInfo(db *database.Database, payload model.Account) (map[string]interface{}, error) {
+	fetchstmt := "SELECT COUNT(*) AS COUNT FROM `sidekiq-dev`.Account WHERE email = ? AND id != ?"
+	var count *int64
+	err := db.Conn.Get(&count, fetchstmt, payload.Email, payload.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch count for email")
+	}
+
+	if (*count) != 0 {
+		return util.SetResponse(nil, 0, "Please use another email. This email is already associated with another account"), nil
+	}
+
+	fetchstmt = "SELECT COUNT(*) AS COUNT FROM `sidekiq-dev`.Account WHERE userName = ? AND id != ?"
+	err = db.Conn.Get(&count, fetchstmt, payload.UserName, payload.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch count for username")
+	}
+
+	if (*count) != 0 {
+		return util.SetResponse(nil, 0, "Please use another userName. This userName is already associated with another account"), nil
+	}
+
+	payload.LastModifiedDate = time.Now()
+	stmt := "UPDATE `sidekiq-dev`.Account" +
+		` SET
+				userName = :userName,
+				firstName = :firstName,
+				lastName = :lastName,
+				photo = :photo,
+				email = :email,
+				recoveryEmail = :recoveryEmail,
+				phone = :phone,
+				lastModifiedDate = :lastModifiedDate
+			WHERE 
+				id = :id
+			`
+	_, err = db.Conn.NamedExec(stmt, payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to update account info")
+	}
+	return util.SetResponse(nil, 1, "Account information updated successfully"), nil
 }

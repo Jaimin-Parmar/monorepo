@@ -2,6 +2,7 @@ package server
 
 import (
 	"authentication-service/api"
+	"authentication-service/api/common"
 	"authentication-service/app"
 	"authentication-service/grpcservice"
 	acProtobuf "authentication-service/proto/v1/pb/account"
@@ -137,10 +138,16 @@ func serveGrpc(ctx context.Context, app *app.App) {
 		logrus.Fatal(err)
 	}
 
+	commonconfig, err := common.InitConfig()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
 	//Create grpc server and register methods.
 	s := grpc.NewServer()
 	authProtobuf.RegisterAuthServiceServer(s, &grpcservice.AuthServer{
-		App: app,
+		App:    app,
+		Config: commonconfig,
 	})
 
 	done := make(chan struct{})

@@ -44,13 +44,6 @@ func (ctx *Context) WithUserProfile(user *model.Account, profile int) *Context {
 	return &ret
 }
 
-// WithSignupUser sets signup user for context
-// func (ctx *Context) WithSignupUser(user *model.SignupUser) *Context {
-// 	ret := *ctx
-// 	ret.SignupUser = user
-// 	return &ret
-// }
-
 // WithUser sets user for context
 func (ctx *Context) WithUser(user *model.Account) *Context {
 	ret := *ctx

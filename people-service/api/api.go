@@ -38,7 +38,7 @@ func New(a *app.App) (api *API, err error) {
 }
 
 func (a *API) Init(r *mux.Router) {
-	accountAPI := accountApipk.New(a.Config, a.App.Repos, a.App.AccountService)
+	accountAPI := accountApipk.New(a.Config, a.App.Repos, a.App.AccountService, a.App)
 	r.Handle("/ping", a.handler(accountAPI.Pong, false)).Methods(http.MethodGet)
 	r.Handle("/user", a.handler(accountAPI.FetchAccountByID, true)).Methods(http.MethodGet)
 	r.Handle("/contact", a.handler(accountAPI.FetchContacts, true)).Methods(http.MethodGet)
@@ -51,14 +51,17 @@ func (a *API) Init(r *mux.Router) {
 	r.Handle("/setAccountType", a.handler(accountAPI.SetAccountType, false, true)).Methods(http.MethodPut)
 	r.Handle("/account/service", a.handler(accountAPI.FetchAccountServices, true)).Methods(http.MethodGet)
 	r.Handle("/pin/verify", a.handler(accountAPI.VerifyPin, false)).Methods(http.MethodPost)
+	r.Handle("/account/info", a.handler(accountAPI.SetAccountInformation, false)).Methods(http.MethodPost)
+	r.Handle("/account/info", a.handler(accountAPI.FetchAccountInformation, true)).Methods(http.MethodGet)
+	r.Handle("/account/info", a.handler(accountAPI.UpdateAccountInfo, true)).Methods(http.MethodPut)
 }
 
 func (a *API) handler(f common.HandlerFuncWithCTX, auth ...bool) http.HandlerFunc {
-	// checkAuth := auth[0]
-	// onlyUserAuth := false
-	// if len(auth) > 1 {
-	// 	onlyUserAuth = auth[1]
-	// }
+	checkAuth := auth[0]
+	onlyUserAuth := false
+	if len(auth) > 1 {
+		onlyUserAuth = auth[1]
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("API -", r.URL.Path)
 		r.Body = http.MaxBytesReader(w, r.Body, a.Config.MaxContentSize*1024*1024)
@@ -72,34 +75,34 @@ func (a *API) handler(f common.HandlerFuncWithCTX, auth ...bool) http.HandlerFun
 			ResponseWriter: w,
 			Hijacker:       hijacker,
 		}
-		// if checkAuth {
-		// 	authResp := checkForUserProfileAuth(a.Config, ctx, r)
-		// 	if authResp.Error != nil {
-		// 		ctx.Logger.WithError(authResp.Error).Error(authResp.ErrMsg)
-		// 		if authResp.ErrCode == http.StatusUnauthorized {
-		// 			http.Error(w, authResp.ErrMsg, authResp.ErrCode)
-		// 		} else {
-		// 			http.Error(w, "error from checkForUserAuth", http.StatusForbidden)
-		// 		}
-		// 		return
-		// 	}
-		// 	ctx = ctx.WithUserProfile(authResp.User, authResp.Profile)
-		// }
+		if checkAuth {
+			authResp := validateUser(a.Config, ctx, r, a.App, true)
+			if authResp.Error != nil {
+				ctx.Logger.WithError(authResp.Error).Error(authResp.ErrMsg)
+				if authResp.ErrCode == http.StatusUnauthorized {
+					http.Error(w, authResp.ErrMsg, authResp.ErrCode)
+				} else {
+					http.Error(w, "error from checkForUserAuth", http.StatusForbidden)
+				}
+				return
+			}
+			ctx = ctx.WithUserProfile(authResp.User, authResp.Profile)
+		}
 
-		// if len(auth) > 1 && onlyUserAuth {
-		// 	authResp := checkForUserAuth(a.Config, ctx, r)
-		// 	if authResp.Error != nil {
-		// 		ctx.Logger.WithError(authResp.Error).Error(authResp.ErrMsg)
-		// 		if authResp.ErrCode == http.StatusUnauthorized {
-		// 			// http.Error(w, "Token has expired!", errCode)
-		// 			http.Error(w, authResp.ErrMsg, authResp.ErrCode)
-		// 		} else {
-		// 			http.Error(w, "error from checkForUserAuth", http.StatusForbidden)
-		// 		}
-		// 		return
-		// 	}
-		// 	ctx = ctx.WithUser(authResp.User)
-		// }
+		if len(auth) > 1 && onlyUserAuth {
+			authResp := validateUser(a.Config, ctx, r, a.App, false)
+			if authResp.Error != nil {
+				ctx.Logger.WithError(authResp.Error).Error(authResp.ErrMsg)
+				if authResp.ErrCode == http.StatusUnauthorized {
+					// http.Error(w, "Token has expired!", errCode)
+					http.Error(w, authResp.ErrMsg, authResp.ErrCode)
+				} else {
+					http.Error(w, "error from checkForUserAuth", http.StatusForbidden)
+				}
+				return
+			}
+			ctx = ctx.WithUser(authResp.User)
+		}
 
 		defer func() {
 			statusCode := w.(*common.StatusCodeRecorder).StatusCode

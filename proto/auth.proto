@@ -8,6 +8,7 @@ option go_package = "proto/v1/authentication";
 message ValidateUserRequest {
   string token = 1;
   int32 profileID = 2;
+  bool isProfileValidate = 3;
 }
 
 message ValidateUserReply {
@@ -16,6 +17,16 @@ message ValidateUserReply {
   string message = 3;
 }
 
+message CreateJWTTokenRequest {
+  int32 accountID = 1;
+}
+
+message CreateJWTTokenReply {
+  string token = 1;
+  int32 status = 2;
+}
+
 service AuthService {
     rpc ValidateUser(ValidateUserRequest) returns (ValidateUserReply) {}
+    rpc CreateJWTToken(CreateJWTTokenRequest) returns (CreateJWTTokenReply) {}
 }

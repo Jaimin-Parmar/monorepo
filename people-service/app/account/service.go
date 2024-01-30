@@ -3,6 +3,7 @@ package account
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"people-service/app/config"
 	"people-service/app/email"
@@ -31,6 +32,9 @@ type Service interface {
 	FetchAccountInformation(accountID int) (map[string]interface{}, error)
 	FetchAccountServices(account model.Account) (map[string]interface{}, error)
 	VerifyPin(pin map[string]interface{}) (map[string]interface{}, error)
+	SetAccountInformation(user model.Account, userID int) (map[string]interface{}, error)
+	DeleteSignupCachedUser(id int) error
+	UpdateAccountInfo(payload model.Account) (map[string]interface{}, error)
 }
 
 type service struct {
@@ -152,4 +156,33 @@ func (s *service) FetchAccountServices(user model.Account) (map[string]interface
 
 func (s *service) VerifyPin(pin map[string]interface{}) (map[string]interface{}, error) {
 	return verifyPin(s.dbMaster, pin)
+}
+
+func (s *service) SetAccountInformation(user model.Account, userID int) (map[string]interface{}, error) {
+	resp, err := setAccountInformation(s.dbMaster, user, userID)
+	if err != nil {
+		return nil, err
+	}
+	if resp["status"] == 0 {
+		return resp, nil
+	}
+	userObj, err := s.FetchAccount(resp["data"].(map[string]interface{})["id"].(int), true)
+	if err != nil || userObj == nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func getSignupCacheKey(userID int) string {
+	return fmt.Sprintf("signupuser:%d", userID)
+}
+
+func (s *service) DeleteSignupCachedUser(id int) error {
+	key := getSignupCacheKey(id)
+	err := s.cache.DeleteValue(key)
+	return err
+}
+
+func (s *service) UpdateAccountInfo(user model.Account) (map[string]interface{}, error) {
+	return updateAccountInfo(s.dbMaster, user)
 }

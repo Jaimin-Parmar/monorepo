@@ -49,22 +49,3 @@ func (config *DBConfig) New(collectionName string) (dbconn *MongoDBConn, err err
 func Close(c *mongo.Client) error {
 	return c.Disconnect(context.TODO())
 }
-
-// func getDatabaseDSN(config *DBConfig) string {
-// 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/", config.UserName, config.Password, config.Host, config.Port)
-// }
-
-// // QuerySingle - run query and return single row
-// func (d *Database) QuerySingle(stmt string, args ...interface{}) *sql.Row {
-// 	row := d.Conn.QueryRow(stmt, args...)
-// 	return row
-// }
-
-// // Query - run query and return multiple rows
-// func (d *Database) Query(stmt string, args ...interface{}) *sql.Rows {
-// 	rows, err := d.Conn.Query(stmt, args...)
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	return rows
-// }

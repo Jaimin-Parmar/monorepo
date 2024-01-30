@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
 	ValidateUser(ctx context.Context, in *ValidateUserRequest, opts ...grpc.CallOption) (*ValidateUserReply, error)
+	CreateJWTToken(ctx context.Context, in *CreateJWTTokenRequest, opts ...grpc.CallOption) (*CreateJWTTokenReply, error)
 }
 
 type authServiceClient struct {
@@ -42,11 +43,21 @@ func (c *authServiceClient) ValidateUser(ctx context.Context, in *ValidateUserRe
 	return out, nil
 }
 
+func (c *authServiceClient) CreateJWTToken(ctx context.Context, in *CreateJWTTokenRequest, opts ...grpc.CallOption) (*CreateJWTTokenReply, error) {
+	out := new(CreateJWTTokenReply)
+	err := c.cc.Invoke(ctx, "/authentication.AuthService/CreateJWTToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
 type AuthServiceServer interface {
 	ValidateUser(context.Context, *ValidateUserRequest) (*ValidateUserReply, error)
+	CreateJWTToken(context.Context, *CreateJWTTokenRequest) (*CreateJWTTokenReply, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedAuthServiceServer struct {
 
 func (UnimplementedAuthServiceServer) ValidateUser(context.Context, *ValidateUserRequest) (*ValidateUserReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateUser not implemented")
+}
+func (UnimplementedAuthServiceServer) CreateJWTToken(context.Context, *CreateJWTTokenRequest) (*CreateJWTTokenReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateJWTToken not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -88,6 +102,24 @@ func _AuthService_ValidateUser_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_CreateJWTToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateJWTTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CreateJWTToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/authentication.AuthService/CreateJWTToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CreateJWTToken(ctx, req.(*CreateJWTTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ValidateUser",
 			Handler:    _AuthService_ValidateUser_Handler,
+		},
+		{
+			MethodName: "CreateJWTToken",
+			Handler:    _AuthService_CreateJWTToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -40,7 +40,7 @@ func (a *API) AuthUser(ctx *app.Context, w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	jwtToken, err := a.App.JwtService.CreateJWTToken(accountReply, a.Config.TokenExpiration, a.App.Config.JWTKey)
+	jwtToken, err := a.App.JwtService.CreateJWTToken(int(accountReply.Id), a.Config.TokenExpiration, a.App.Config.JWTKey)
 	if err != nil {
 		json.NewEncoder(w).Encode(util.SetResponse(nil, 0, "Login not successful."))
 		return err

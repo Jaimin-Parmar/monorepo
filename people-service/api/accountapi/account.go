@@ -1,15 +1,21 @@
 package accountapi
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"people-service/app"
+	"people-service/helper"
 	"people-service/model"
+	authProtobuf "people-service/proto/v1/pb/authentication"
 	"people-service/util"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Pong Api
@@ -168,6 +174,241 @@ func (a *api) VerifyPin(ctx *app.Context, w http.ResponseWriter, r *http.Request
 	res, err := a.accountService.VerifyPin(payload)
 	if err != nil {
 		return err
+	}
+	json.NewEncoder(w).Encode(res)
+	return nil
+}
+
+func (a *api) SetAccountInformation(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	r.ParseMultipartForm(12 << 20)
+	err := r.ParseForm()
+	if err != nil {
+		return errors.Wrap(err, "error parsing form")
+	}
+	var payload *model.Account
+	err = json.Unmarshal([]byte(r.FormValue("accountInfo")), &payload)
+	if err != nil {
+		return errors.Wrap(err, "error parsing user metadata")
+	}
+
+	res, err := a.accountService.SetAccountInformation(*payload, payload.ID)
+	if err != nil {
+		return errors.Wrap(err, "error in setting account information")
+	}
+	if res["status"] == 0 {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+
+	payload.ID = res["data"].(map[string]interface{})["id"].(int)
+
+	request := authProtobuf.CreateJWTTokenRequest{
+		AccountID: int32(payload.ID),
+	}
+
+	tokenReply, err := a.App.Repos.AuthServiceClient.CreateJWTToken(context.TODO(), &request)
+	if err != nil {
+		return errors.Wrap(err, "error in creating JWT token")
+	}
+
+	if tokenReply.Status != 1 {
+		return errors.New("error in creating JWT token")
+	}
+
+	if res["status"].(int) == 1 {
+		res["data"].(map[string]interface{})["token"] = tokenReply.Token
+	}
+
+	errctx := a.accountService.DeleteSignupCachedUser(payload.ID)
+	if errctx != nil {
+		return errors.Wrap(errctx, "error in deleting sign-up cache")
+	}
+
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+	}
+	return err
+}
+
+func (a *api) FetchAccountInformation(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	res, err := a.accountService.FetchAccountInformation(ctx.User.ID)
+	if err != nil {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+
+	key := util.GetKeyForUserImage(ctx.User.ID, "")
+	fileName := fmt.Sprintf("%d.png", ctx.User.ID)
+	fileData, err := a.App.StorageService.GetUserFile(key, fileName)
+	if err == nil {
+		if accdetails, ok := res["data"].(model.AccountInfoResponse); ok {
+			accdetails.AccountInformation.Photo = fileData.Filename
+
+			thumbKey := util.GetKeyForUserImage(ctx.User.ID, "thumbs")
+			thumbfileName := fmt.Sprintf("%v.png", ctx.User.ID)
+			thumbs, err := helper.GetThumbnails(a.App.StorageService, thumbKey, thumbfileName, []string{})
+			if err != nil {
+				thumbs = model.Thumbnails{}
+			}
+
+			thumbs.Original = accdetails.AccountInformation.Photo
+			accdetails.AccountInformation.Thumbs = thumbs
+
+			if accdetails.OrganizationInformation != nil {
+
+				// Fetch Organization Image
+				key := util.GetKeyForOrganizationImage(ctx.User.ID, "")
+				fileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				fileData, err := a.App.StorageService.GetUserFile(key, fileName)
+				if err == nil {
+					accdetails.OrganizationInformation.Photo = fileData.Filename
+				} else {
+					logrus.Error(err, "error in fetching organization image")
+				}
+
+				thumbKey := util.GetKeyForOrganizationImage(ctx.User.ID, "thumbs")
+				thumbfileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				accdetails.OrganizationInformation.Thumbs, err = helper.GetThumbnails(a.App.StorageService, thumbKey, thumbfileName, []string{})
+				if err != nil {
+					accdetails.OrganizationInformation.Thumbs = model.Thumbnails{}
+				}
+
+				accdetails.OrganizationInformation.Thumbs.Original = accdetails.OrganizationInformation.Photo
+			}
+			res["data"] = accdetails
+		}
+		json.NewEncoder(w).Encode(res)
+		return nil
+	} else {
+		if accdetails, ok := res["data"].(model.AccountInfoResponse); ok {
+			accdetails.AccountInformation.Photo = ""
+			if accdetails.OrganizationInformation != nil {
+
+				// Fetch Organization Image
+				key := util.GetKeyForOrganizationImage(ctx.User.ID, "")
+				fileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				fileData, err := a.App.StorageService.GetUserFile(key, fileName)
+				if err == nil {
+					accdetails.OrganizationInformation.Photo = fileData.Filename
+				} else {
+					logrus.Error(err, "error in fetching organization image")
+				}
+
+				thumbKey := util.GetKeyForOrganizationImage(ctx.User.ID, "thumbs")
+				thumbfileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				accdetails.OrganizationInformation.Thumbs, err = helper.GetThumbnails(a.App.StorageService, thumbKey, thumbfileName, []string{})
+				if err != nil {
+					accdetails.OrganizationInformation.Thumbs = model.Thumbnails{}
+				}
+
+				accdetails.OrganizationInformation.Thumbs.Original = accdetails.OrganizationInformation.Photo
+			}
+			res["data"] = accdetails
+		}
+		json.NewEncoder(w).Encode(res)
+		log.Println("error in fetching profile image", err)
+		err = nil
+	}
+	return err
+}
+
+func (a *api) UpdateAccountInfo(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	r.ParseMultipartForm(12 << 20)
+	err := r.ParseForm()
+	if err != nil {
+		return errors.Wrap(err, "error parsing form")
+	}
+	accountData := r.FormValue("accountInfo")
+	var payload model.Account
+	err = json.Unmarshal([]byte(accountData), &payload)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshall accountData")
+	}
+	payload.ID = ctx.User.ID
+	res, err := a.accountService.UpdateAccountInfo(payload)
+	if err != nil {
+		return errors.Wrap(err, "unable to update account info")
+	}
+	if res["status"] == 0 {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+
+	res, err = a.accountService.FetchAccountInformation(ctx.User.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to fetch account information")
+	}
+
+	key := util.GetKeyForUserImage(ctx.User.ID, "")
+	fileName := fmt.Sprintf("%d.png", ctx.User.ID)
+	fileData, err := a.App.StorageService.GetUserFile(key, fileName)
+	if err == nil {
+		if accdetails, ok := res["data"].(model.AccountInfoResponse); ok {
+			accdetails.AccountInformation.Photo = fileData.Filename
+
+			thumbKey := util.GetKeyForUserImage(ctx.User.ID, "thumbs")
+			thumbfileName := fmt.Sprintf("%v.png", ctx.User.ID)
+			thumbs, err := helper.GetThumbnails(a.App.StorageService, thumbKey, thumbfileName, []string{})
+			if err != nil {
+				thumbs = model.Thumbnails{}
+			}
+
+			thumbs.Original = accdetails.AccountInformation.Photo
+			accdetails.AccountInformation.Thumbs = thumbs
+
+			if accdetails.OrganizationInformation != nil {
+
+				// Fetch Organization Image
+				key := util.GetKeyForOrganizationImage(ctx.User.ID, "")
+				fileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				fileData, err := a.App.StorageService.GetUserFile(key, fileName)
+				if err == nil {
+					accdetails.OrganizationInformation.Photo = fileData.Filename
+				} else {
+					logrus.Error(err, "error in fetching organization image")
+				}
+
+				thumbKey := util.GetKeyForOrganizationImage(ctx.User.ID, "thumbs")
+				thumbfileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				thumbs, err := helper.GetThumbnails(a.App.StorageService, thumbKey, thumbfileName, []string{})
+				if err != nil {
+					thumbs = model.Thumbnails{}
+				}
+
+				thumbs.Original = accdetails.OrganizationInformation.Photo
+				accdetails.OrganizationInformation.Thumbs = thumbs
+
+			}
+			res["data"] = accdetails
+		}
+
+	} else {
+		if accdetails, ok := res["data"].(model.AccountInfoResponse); ok {
+			accdetails.AccountInformation.Photo = ""
+			if accdetails.OrganizationInformation != nil {
+
+				// Fetch Organization Image
+				key := util.GetKeyForOrganizationImage(ctx.User.ID, "")
+				fileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				fileData, err := a.App.StorageService.GetUserFile(key, fileName)
+				if err == nil {
+					accdetails.OrganizationInformation.Photo = fileData.Filename
+				} else {
+					logrus.Error(err, "error in fetching organization image")
+				}
+
+				thumbKey := util.GetKeyForOrganizationImage(ctx.User.ID, "thumbs")
+				thumbfileName := fmt.Sprintf("%v.png", ctx.User.ID)
+				thumbs, err := helper.GetThumbnails(a.App.StorageService, thumbKey, thumbfileName, []string{})
+				if err != nil {
+					thumbs = model.Thumbnails{}
+				}
+
+				thumbs.Original = accdetails.OrganizationInformation.Photo
+				accdetails.OrganizationInformation.Thumbs = thumbs
+			}
+			res["data"] = accdetails
+		}
 	}
 	json.NewEncoder(w).Encode(res)
 	return nil

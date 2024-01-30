@@ -7,14 +7,12 @@ import (
 	"authentication-service/model"
 	"time"
 
-	acProtobuf "authentication-service/proto/v1/pb/account"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
 type Service interface {
 	FetchJWTToken(token string) (*Claims, error)
-	CreateJWTToken(account *acProtobuf.AccountReply, tokenExpiration time.Duration, JWTKey string) (*JWTToken, error)
+	CreateJWTToken(UserID int, tokenExpiration time.Duration, JWTKey string) (*JWTToken, error)
 }
 
 type service struct {
@@ -66,10 +64,10 @@ func (s *service) CreateSignupJWTToken(user *model.AccountSignup, tokenExpiratio
 	}, nil
 }
 
-func (s *service) CreateJWTToken(account *acProtobuf.AccountReply, tokenExpiration time.Duration, JWTKey string) (*JWTToken, error) {
+func (s *service) CreateJWTToken(UserID int, tokenExpiration time.Duration, JWTKey string) (*JWTToken, error) {
 	expirationTime := time.Now().Add(tokenExpiration * time.Hour)
 	claims := &Claims{
-		UserID: int(account.Id),
+		UserID: int(UserID),
 		// Username: user.Username,
 		StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds

@@ -12,6 +12,7 @@ import (
 	"people-service/app"
 	"people-service/grpcservice"
 	acProtobuf "people-service/proto/v1/pb/account"
+	authProtobuf "people-service/proto/v1/pb/authentication"
 	"people-service/util"
 	"sync"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func NewServeCommand() *cobra.Command {
@@ -32,6 +34,13 @@ func NewServeCommand() *cobra.Command {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+
+	authServiceClient, err := grpc.Dial("localhost:8084", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	defer authServiceClient.Close()
+
 	app, err := app.New()
 	if err != nil {
 		return err
@@ -42,6 +51,8 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	app.Repos.AuthServiceClient = authProtobuf.NewAuthServiceClient(authServiceClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -88,11 +99,11 @@ func serveAPI(ctx context.Context, api *api.API) {
 
 	router := mux.NewRouter()
 	router.Use(cors)
-	// router.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	w.WriteHeader(http.StatusOK)
-	// 	fmt.Fprintf(w, `{"status":"OK","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
-	// })
+	router.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"OK","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	})
 	api.Init(router.PathPrefix("/api").Subrouter().StrictSlash(true))
 
 	fs := http.FileServer(http.Dir("./public"))

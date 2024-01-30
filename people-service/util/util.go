@@ -68,47 +68,7 @@ func ConvertBytesToHumanReadable(sizeInBytes int64) (sizeHumanReadable string) {
 func DetermineFileType(fileName string) (fileType string) {
 	fileType = filepath.Ext(fileName)
 	fmt.Println("filetype: ", fileType)
-	return
-
-	// fmt.Println()
-	// exts, _ := mime.ExtensionsByType(mimeType)
-	// extract(mimeType)
-	// fmt.Println("file ext", exts)
-
-	// switch mimeType {
-	// case "audio/mpeg":
-	// 	exts, _ := mime.ExtensionsByType(mimeType)
-	// 	for _, ext := range exts {
-	// 		if ext == ".mp3" {
-	// 			fileType = ext
-	// 		}
-	// 	}
-
-	// case "video/mp4":
-	// 	exts, _ := mime.ExtensionsByType(mimeType)
-	// 	for _, ext := range exts {
-	// 		if ext == ".mp4" {
-	// 			fileType = ext
-	// 		} else if ext == ".mkv" {
-	// 			fileType = ext
-	// 		}
-	// 	}
-	// case "application/pdf":
-	// 	exts, _ := mime.ExtensionsByType(mimeType)
-	// 	for _, ext := range exts {
-	// 		if ext == ".pdf" {
-	// 			fileType = ext
-	// 		}
-	// 	}
-	// 	// strs := extract(fType)
-	// 	// fmt.Println(strs)
-	// case "application/octet-stream":
-	// 	fileType = "binary"
-	// default:
-	// 	fmt.Println("Unknown file type")
-	// }
-
-	// return
+	return fileType
 }
 
 func Contains(s []string, e string) bool {

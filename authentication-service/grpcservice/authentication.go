@@ -1,6 +1,7 @@
 package grpcservice
 
 import (
+	"authentication-service/api/common"
 	"authentication-service/app"
 	acProtobuf "authentication-service/proto/v1/pb/account"
 	authProtobuf "authentication-service/proto/v1/pb/authentication"
@@ -13,7 +14,8 @@ import (
 
 type AuthServer struct {
 	authProtobuf.AuthServiceServer
-	App *app.App
+	App    *app.App
+	Config *common.Config
 }
 
 func (s *AuthServer) ValidateUser(ctx context.Context, req *authProtobuf.ValidateUserRequest) (*authProtobuf.ValidateUserReply, error) {
@@ -22,8 +24,10 @@ func (s *AuthServer) ValidateUser(ctx context.Context, req *authProtobuf.Validat
 		return nil, errors.New("token is not present")
 	}
 
-	if req.ProfileID <= 0 {
-		return nil, errors.New("profile is not present")
+	if req.IsProfileValidate {
+		if req.ProfileID <= 0 {
+			return nil, errors.New("profile is not present")
+		}
 	}
 
 	claims, err := s.App.JwtService.FetchJWTToken(req.Token)
@@ -54,24 +58,38 @@ func (s *AuthServer) ValidateUser(ctx context.Context, req *authProtobuf.Validat
 		return nil, errors.New("invalid account")
 	}
 
-	vr := acProtobuf.ValidateProfileRequest{
-		ProfileId: int32(req.ProfileID),
-		AccountId: int32(claims.UserID),
-	}
+	if req.IsProfileValidate {
+		vr := acProtobuf.ValidateProfileRequest{
+			ProfileId: int32(req.ProfileID),
+			AccountId: int32(claims.UserID),
+		}
 
-	vrs, err := s.App.Repos.AccountServiceClient.ValidateProfile(context.TODO(), &vr)
-	if err != nil {
-		logrus.Error("Error in validate profile ", err)
-		return nil, err
-	}
+		vrs, err := s.App.Repos.AccountServiceClient.ValidateProfile(context.TODO(), &vr)
+		if err != nil {
+			logrus.Error("Error in validate profile ", err)
+			return nil, err
+		}
 
-	if vrs.Status != 1 {
-		return nil, errors.New("profile is invalid")
+		if vrs.Status != 1 {
+			return nil, errors.New("profile is invalid")
+		}
 	}
 
 	return &authProtobuf.ValidateUserReply{
 		Data:    crRes.Data,
 		Status:  1,
 		Message: "User verified.",
+	}, nil
+}
+
+func (s *AuthServer) CreateJWTToken(ctx context.Context, req *authProtobuf.CreateJWTTokenRequest) (*authProtobuf.CreateJWTTokenReply, error) {
+	jwtToken, err := s.App.JwtService.CreateJWTToken(int(req.AccountID), s.Config.TokenExpiration, s.App.Config.JWTKey)
+	if err != nil {
+		logrus.Println("Error while creating jwt token ", err)
+		return nil, err
+	}
+	return &authProtobuf.CreateJWTTokenReply{
+		Token:  jwtToken.Value,
+		Status: 1,
 	}, nil
 }
