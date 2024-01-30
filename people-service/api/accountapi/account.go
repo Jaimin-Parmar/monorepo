@@ -27,7 +27,7 @@ func (a *api) Pong(ctx *app.Context, w http.ResponseWriter, r *http.Request) err
 
 // GetAccounts
 func (a *api) FetchAccounts(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-	res, err := a.accountService.FetchAccounts()
+	res, err := a.App.AccountService.FetchAccounts()
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (a *api) FetchAccounts(ctx *app.Context, w http.ResponseWriter, r *http.Req
 
 // FetchAccountByID - fetch account by ID
 func (a *api) FetchAccountByID(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-	user, err := a.accountService.FetchAccount(ctx.User.ID, false)
+	user, err := a.App.AccountService.FetchAccount(ctx.User.ID, false)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (a *api) FetchAccountByID(ctx *app.Context, w http.ResponseWriter, r *http.
 }
 
 func (a *api) FetchContacts(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-	contacts, err := a.accountService.FetchContacts(ctx.User.ID)
+	contacts, err := a.App.AccountService.FetchContacts(ctx.User.ID)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (a *api) CreateAccount(ctx *app.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return err
 	}
-	res, err := a.accountService.CreateAccount(payload)
+	res, err := a.App.AccountService.CreateAccount(payload)
 	if err == nil {
 		json.NewEncoder(w).Encode(res)
 		return nil
@@ -77,7 +77,7 @@ func (a *api) GetVerificationCode(ctx *app.Context, w http.ResponseWriter, r *ht
 	}
 
 	if payload.Type == "email" {
-		res, err := a.accountService.GetVerificationCode(payload.ID, payload.Email)
+		res, err := a.App.AccountService.GetVerificationCode(payload.ID, payload.Email)
 		if err != nil {
 			return err
 		}
@@ -94,7 +94,7 @@ func (a *api) VerifyLink(ctx *app.Context, w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		return err
 	}
-	res, err := a.accountService.VerifyLink(payload.Token)
+	res, err := a.App.AccountService.VerifyLink(payload.Token)
 	if err == nil {
 		json.NewEncoder(w).Encode(res)
 		return nil
@@ -111,7 +111,7 @@ func (a *api) ForgotPassword(ctx *app.Context, w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return err
 	}
-	res, err := a.accountService.ForgotPassword(payload.Email)
+	res, err := a.App.AccountService.ForgotPassword(payload.Email)
 	if err == nil {
 		json.NewEncoder(w).Encode(res)
 		return nil
@@ -126,7 +126,7 @@ func (a *api) ResetPassword(ctx *app.Context, w http.ResponseWriter, r *http.Req
 	if err != nil {
 		return err
 	}
-	res, err := a.accountService.ResetPassword(payload)
+	res, err := a.App.AccountService.ResetPassword(payload)
 	if err == nil {
 		json.NewEncoder(w).Encode(res)
 		return nil
@@ -142,7 +142,7 @@ func (a *api) SetAccountType(ctx *app.Context, w http.ResponseWriter, r *http.Re
 		return err
 	}
 	payload.AccountId = strconv.Itoa(ctx.User.ID)
-	res, err := a.accountService.SetAccountType(payload)
+	res, err := a.App.AccountService.SetAccountType(payload)
 	if err == nil {
 		json.NewEncoder(w).Encode(res)
 		return nil
@@ -154,9 +154,9 @@ func (a *api) FetchAccountServices(ctx *app.Context, w http.ResponseWriter, r *h
 	var err error
 	var res map[string]interface{}
 
-	accInfo, err := a.accountService.FetchAccountInformation(ctx.User.ID)
+	accInfo, err := a.App.AccountService.FetchAccountInformation(ctx.User.ID)
 	if err == nil {
-		res, err = a.accountService.FetchAccountServices(accInfo["data"].(model.Account))
+		res, err = a.App.AccountService.FetchAccountServices(accInfo["data"].(model.Account))
 	}
 	if err == nil {
 		json.NewEncoder(w).Encode(res)
@@ -171,7 +171,7 @@ func (a *api) VerifyPin(ctx *app.Context, w http.ResponseWriter, r *http.Request
 		return errors.Wrap(err, "unable to parse input")
 	}
 
-	res, err := a.accountService.VerifyPin(payload)
+	res, err := a.App.AccountService.VerifyPin(payload)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func (a *api) SetAccountInformation(ctx *app.Context, w http.ResponseWriter, r *
 		return errors.Wrap(err, "error parsing user metadata")
 	}
 
-	res, err := a.accountService.SetAccountInformation(*payload, payload.ID)
+	res, err := a.App.AccountService.SetAccountInformation(*payload, payload.ID)
 	if err != nil {
 		return errors.Wrap(err, "error in setting account information")
 	}
@@ -219,7 +219,7 @@ func (a *api) SetAccountInformation(ctx *app.Context, w http.ResponseWriter, r *
 		res["data"].(map[string]interface{})["token"] = tokenReply.Token
 	}
 
-	errctx := a.accountService.DeleteSignupCachedUser(payload.ID)
+	errctx := a.App.AccountService.DeleteSignupCachedUser(payload.ID)
 	if errctx != nil {
 		return errors.Wrap(errctx, "error in deleting sign-up cache")
 	}
@@ -231,7 +231,7 @@ func (a *api) SetAccountInformation(ctx *app.Context, w http.ResponseWriter, r *
 }
 
 func (a *api) FetchAccountInformation(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
-	res, err := a.accountService.FetchAccountInformation(ctx.User.ID)
+	res, err := a.App.AccountService.FetchAccountInformation(ctx.User.ID)
 	if err != nil {
 		json.NewEncoder(w).Encode(res)
 		return nil
@@ -325,7 +325,7 @@ func (a *api) UpdateAccountInfo(ctx *app.Context, w http.ResponseWriter, r *http
 		return errors.Wrap(err, "unable to unmarshall accountData")
 	}
 	payload.ID = ctx.User.ID
-	res, err := a.accountService.UpdateAccountInfo(payload)
+	res, err := a.App.AccountService.UpdateAccountInfo(payload)
 	if err != nil {
 		return errors.Wrap(err, "unable to update account info")
 	}
@@ -334,7 +334,7 @@ func (a *api) UpdateAccountInfo(ctx *app.Context, w http.ResponseWriter, r *http
 		return nil
 	}
 
-	res, err = a.accountService.FetchAccountInformation(ctx.User.ID)
+	res, err = a.App.AccountService.FetchAccountInformation(ctx.User.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch account information")
 	}

@@ -39,7 +39,7 @@ func validateUser(config *common.Config, ctx *app.Context, r *http.Request, app 
 			c, err := r.Cookie("Profile")
 			if err != nil {
 				return model.AuthResponse{
-					User: nil, Profile: 0, ErrCode: http.StatusUnauthorized,
+					User: nil, Profile: -1, ErrCode: http.StatusUnauthorized,
 					ErrMsg: "Profile is not present", Error: err,
 				}
 			}
@@ -52,14 +52,14 @@ func validateUser(config *common.Config, ctx *app.Context, r *http.Request, app 
 	authresp, err := app.Repos.AuthServiceClient.ValidateUser(context.TODO(), &request)
 	if err != nil {
 		return model.AuthResponse{
-			User: nil, Profile: 0, ErrCode: http.StatusUnauthorized,
+			User: nil, Profile: -1, ErrCode: http.StatusUnauthorized,
 			ErrMsg: err.Error(), Error: ctx.AuthorizationError(true),
 		}
 	}
 
 	if authresp.Status != 1 {
 		return model.AuthResponse{
-			User: nil, Profile: 0, ErrCode: http.StatusUnauthorized,
+			User: nil, Profile: -1, ErrCode: http.StatusUnauthorized,
 			ErrMsg: "invalid jwt token", Error: ctx.AuthorizationError(true),
 		}
 	}
@@ -68,7 +68,7 @@ func validateUser(config *common.Config, ctx *app.Context, r *http.Request, app 
 	err = json.Unmarshal(authresp.GetData().Value, &accountData)
 	if err != nil {
 		return model.AuthResponse{
-			User: nil, Profile: 0, ErrCode: http.StatusUnauthorized,
+			User: nil, Profile: -1, ErrCode: http.StatusUnauthorized,
 			ErrMsg: "Account error", Error: ctx.AuthorizationError(true),
 		}
 	}

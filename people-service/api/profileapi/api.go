@@ -1,4 +1,4 @@
-package accountapi
+package profileapi
 
 import (
 	"people-service/api/common"
