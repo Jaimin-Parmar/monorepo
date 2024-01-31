@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: proto/auth.proto
 
-package authentication
+package v1
 
 import (
 	context "context"
@@ -36,7 +36,7 @@ func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 
 func (c *authServiceClient) ValidateUser(ctx context.Context, in *ValidateUserRequest, opts ...grpc.CallOption) (*ValidateUserReply, error) {
 	out := new(ValidateUserReply)
-	err := c.cc.Invoke(ctx, "/authentication.AuthService/ValidateUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/ValidateUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *authServiceClient) ValidateUser(ctx context.Context, in *ValidateUserRe
 
 func (c *authServiceClient) CreateJWTToken(ctx context.Context, in *CreateJWTTokenRequest, opts ...grpc.CallOption) (*CreateJWTTokenReply, error) {
 	out := new(CreateJWTTokenReply)
-	err := c.cc.Invoke(ctx, "/authentication.AuthService/CreateJWTToken", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/CreateJWTToken", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func _AuthService_ValidateUser_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/authentication.AuthService/ValidateUser",
+		FullMethod: "/v1.AuthService/ValidateUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).ValidateUser(ctx, req.(*ValidateUserRequest))
@@ -112,7 +112,7 @@ func _AuthService_CreateJWTToken_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/authentication.AuthService/CreateJWTToken",
+		FullMethod: "/v1.AuthService/CreateJWTToken",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).CreateJWTToken(ctx, req.(*CreateJWTTokenRequest))
@@ -124,7 +124,7 @@ func _AuthService_CreateJWTToken_Handler(srv interface{}, ctx context.Context, d
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AuthService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "authentication.AuthService",
+	ServiceName: "v1.AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

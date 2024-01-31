@@ -9,7 +9,7 @@ import (
 	"people-service/app"
 	"people-service/helper"
 	"people-service/model"
-	authProtobuf "people-service/proto/v1/pb/authentication"
+	authProtobuf "people-service/proto/authentication"
 	"people-service/util"
 	"strconv"
 	"time"

@@ -2,7 +2,10 @@ module people-service
 
 go 1.19
 
-replace people-service/proto/v1/pb => /home/admin1/go/sidekiq/monorepo/proto/v1
+replace (
+	people-service/proto/account => /home/admin1/go/sidekiq/monorepo/proto/account/v1
+	people-service/proto/authentication => /home/admin1/go/sidekiq/monorepo/proto/authentication/v1
+)
 
 require (
 	github.com/SherClockHolmes/webpush-go v1.3.0
@@ -25,7 +28,8 @@ require (
 	golang.org/x/sys v0.15.0
 	golang.org/x/text v0.14.0
 	google.golang.org/grpc v1.61.0
-	people-service/proto/v1/pb v0.0.0-00010101000000-000000000000
+	people-service/proto/account v0.0.0-00010101000000-000000000000
+	people-service/proto/authentication v0.0.0-00010101000000-000000000000
 )
 
 require (

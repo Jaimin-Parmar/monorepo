@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: proto/account.proto
 
-package account
+package v1
 
 import (
 	context "context"
@@ -37,7 +37,7 @@ func NewAccountServiceClient(cc grpc.ClientConnInterface) AccountServiceClient {
 
 func (c *accountServiceClient) AuthAccount(ctx context.Context, in *CredentialsRequest, opts ...grpc.CallOption) (*AccountReply, error) {
 	out := new(AccountReply)
-	err := c.cc.Invoke(ctx, "/account.AccountService/AuthAccount", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.AccountService/AuthAccount", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *accountServiceClient) AuthAccount(ctx context.Context, in *CredentialsR
 
 func (c *accountServiceClient) GetAccountDetails(ctx context.Context, in *AccountDetailRequest, opts ...grpc.CallOption) (*GenericReply, error) {
 	out := new(GenericReply)
-	err := c.cc.Invoke(ctx, "/account.AccountService/GetAccountDetails", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.AccountService/GetAccountDetails", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (c *accountServiceClient) GetAccountDetails(ctx context.Context, in *Accoun
 
 func (c *accountServiceClient) ValidateProfile(ctx context.Context, in *ValidateProfileRequest, opts ...grpc.CallOption) (*GenericReply, error) {
 	out := new(GenericReply)
-	err := c.cc.Invoke(ctx, "/account.AccountService/ValidateProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v1.AccountService/ValidateProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func _AccountService_AuthAccount_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/account.AccountService/AuthAccount",
+		FullMethod: "/v1.AccountService/AuthAccount",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountServiceServer).AuthAccount(ctx, req.(*CredentialsRequest))
@@ -126,7 +126,7 @@ func _AccountService_GetAccountDetails_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/account.AccountService/GetAccountDetails",
+		FullMethod: "/v1.AccountService/GetAccountDetails",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountServiceServer).GetAccountDetails(ctx, req.(*AccountDetailRequest))
@@ -144,7 +144,7 @@ func _AccountService_ValidateProfile_Handler(srv interface{}, ctx context.Contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/account.AccountService/ValidateProfile",
+		FullMethod: "/v1.AccountService/ValidateProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AccountServiceServer).ValidateProfile(ctx, req.(*ValidateProfileRequest))
@@ -156,7 +156,7 @@ func _AccountService_ValidateProfile_Handler(srv interface{}, ctx context.Contex
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AccountService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "account.AccountService",
+	ServiceName: "v1.AccountService",
 	HandlerType: (*AccountServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

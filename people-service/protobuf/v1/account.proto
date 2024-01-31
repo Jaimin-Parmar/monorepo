@@ -1,9 +1,9 @@
 syntax = "proto3";
 import "google/protobuf/any.proto";
 
-package account;
+package v1;
 
-option go_package = "proto/v1/account";
+option go_package = "proto/account/v1";
 
 message CredentialsRequest {
   string user_name = 1;

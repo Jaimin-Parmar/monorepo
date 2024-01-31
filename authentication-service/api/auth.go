@@ -3,7 +3,7 @@ package api
 import (
 	"authentication-service/app"
 	"authentication-service/model"
-	acProtobuf "authentication-service/proto/v1/pb/account"
+	acProtobuf "authentication-service/proto/account"
 	"authentication-service/util"
 	"context"
 	"encoding/json"

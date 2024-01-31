@@ -8,7 +8,7 @@ import (
 	"people-service/api/common"
 	"people-service/app"
 	"people-service/model"
-	authProtobuf "people-service/proto/v1/pb/authentication"
+	authProtobuf "people-service/proto/authentication"
 	"strconv"
 )
 

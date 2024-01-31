@@ -2,10 +2,14 @@ module authentication-service
 
 go 1.19
 
-replace authentication-service/proto/v1/pb => /home/admin1/go/sidekiq/monorepo/proto/v1
+replace (
+	authentication-service/proto/account => /home/admin1/go/sidekiq/monorepo/proto/account/v1
+	authentication-service/proto/authentication => /home/admin1/go/sidekiq/monorepo/proto/authentication/v1
+)
 
 require (
-	authentication-service/proto/v1/pb v0.0.0-00010101000000-000000000000
+	authentication-service/proto/account v0.0.0-00010101000000-000000000000
+	authentication-service/proto/authentication v0.0.0-00010101000000-000000000000
 	github.com/SherClockHolmes/webpush-go v1.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis/v7 v7.4.1

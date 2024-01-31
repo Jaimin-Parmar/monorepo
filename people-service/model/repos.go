@@ -4,7 +4,7 @@ import (
 	"people-service/cache"
 	"people-service/database"
 	"people-service/mongodatabase"
-	authProtobuf "people-service/proto/v1/pb/authentication"
+	authProtobuf "people-service/proto/authentication"
 )
 
 // Repos container to hold handles for cache / db repos
