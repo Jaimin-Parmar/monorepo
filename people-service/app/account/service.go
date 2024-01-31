@@ -25,6 +25,7 @@ type Service interface {
 	CreateAccount(account model.AccountSignup) (map[string]interface{}, error)
 	FetchCachedAccount(id int) (*model.Account, error)
 	GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error)
+	VerifyVerificationCode(userID int, payload map[string]interface{}) (map[string]interface{}, error)
 	VerifyLink(token string) (map[string]interface{}, error)
 	ForgotPassword(userEmail string) (map[string]interface{}, error)
 	ResetPassword(payload *model.ResetPassword) (map[string]interface{}, error)
@@ -128,6 +129,10 @@ func (s *service) CreateAccount(account model.AccountSignup) (map[string]interfa
 
 func (s *service) GetVerificationCode(accountID int, emailID string) (map[string]interface{}, error) {
 	return getVerificationCode(s.dbMaster, s.emailService, accountID, emailID)
+}
+
+func (s *service) VerifyVerificationCode(userID int, payload map[string]interface{}) (map[string]interface{}, error) {
+	return verifyVerificationCode(s.dbMaster, userID, payload)
 }
 
 func (s *service) VerifyLink(token string) (map[string]interface{}, error) {

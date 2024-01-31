@@ -162,6 +162,24 @@ func getVerificationCode(db *database.Database, emailService email.Service, user
 	return resData, nil
 }
 
+func verifyVerificationCode(db *database.Database, userID int, payload map[string]interface{}) (map[string]interface{}, error) {
+	user := &model.AccountSignup{}
+	stmt := "SELECT id, verificationCode FROM `sidekiq-dev`.AccountSignup WHERE id = ?;"
+	err := db.Conn.Get(user, stmt, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch verification code for user")
+	}
+	if payload["verificationCode"].(string) == "" || user.VerificationCode != payload["verificationCode"].(string) {
+		return util.SetResponse(nil, 0, "Verification Code provided is wrong. Please try again!"), nil
+	}
+	stmt = "UPDATE `sidekiq-dev`.AccountSignup SET verificationCode = '' WHERE id = :id;"
+	_, err = db.Conn.NamedExec(stmt, user)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to update verification code for user")
+	}
+	return util.SetResponse(nil, 1, "OTP verified successfully."), nil
+}
+
 func verifyLink(db *database.Database, emailService email.Service, token string) (map[string]interface{}, error) {
 	response := make(map[string]interface{})
 	user := []*model.Account{}

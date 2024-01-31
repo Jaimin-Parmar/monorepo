@@ -86,6 +86,20 @@ func (a *api) GetVerificationCode(ctx *app.Context, w http.ResponseWriter, r *ht
 	return nil
 }
 
+func (a *api) VerifyVerificationCode(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
+	var payload map[string]interface{}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		return err
+	}
+	res, err := a.App.AccountService.VerifyVerificationCode(int(payload["id"].(float64)), payload)
+	if err == nil {
+		json.NewEncoder(w).Encode(res)
+		return nil
+	}
+	return err
+}
+
 func (a *api) VerifyLink(ctx *app.Context, w http.ResponseWriter, r *http.Request) error {
 	var payload struct {
 		Token string `json:"token" db:"token"`
