@@ -60,4 +60,21 @@ func (a *API) Init(r *mux.Router) {
 	r.Handle("/user/{userID}/profile/info", a.handler(profileAPI.GetProfileInfo, true)).Methods(http.MethodGet)
 	r.Handle("/user/{userID}/profile/tags", a.handler(profileAPI.GetProfileTags, true)).Methods(http.MethodGet)
 	r.Handle("/user/{userID}/profile/delete", a.handler(profileAPI.DeleteProfile, true)).Methods(http.MethodDelete)
+
+	r.Handle("/user/{userID}/profile/code/generate", a.handler(profileAPI.GenerateCode, true)).Methods(http.MethodPost)
+	r.Handle("/user/{userID}/profile/code/delete", a.handler(profileAPI.DeleteCode, true)).Methods(http.MethodDelete)
+	r.Handle("/user/{userID}/profile/settings", a.handler(profileAPI.UpdateProfileSettings, true)).Methods(http.MethodPut)
+	r.Handle("/user/{userID}/profile/settings/shareable", a.handler(profileAPI.UpdateShareableSettings, true)).Methods(http.MethodPut)
+
+	// CO-MANAGER
+	r.Handle("/user/{userID}/profile/manage/send", a.handler(profileAPI.SendCoManagerRequest, true)).Methods(http.MethodPost)
+	r.Handle("/user/{userID}/profile/manage/accept", a.handler(profileAPI.AcceptCoManagerRequest, true)).Methods(http.MethodPut)
+	r.Handle("/user/{userID}/profile/manage/list", a.handler(profileAPI.ListProfilesWithCoManager, true)).Methods(http.MethodGet)
+	r.Handle("/user/{userID}/profile/manage/external/list", a.handler(profileAPI.ListExternalProfiles, true)).Methods(http.MethodGet)
+	r.Handle("/user/{userID}/profile/people/info", a.handler(profileAPI.GetPeopleInfo, true)).Methods(http.MethodPost)
+	r.Handle("/user/{userID}/profile/boards/{type}", a.handler(profileAPI.FetchBoards, true)).Methods(http.MethodGet)
+	r.Handle("/user/{userID}/profile/privacy/co-manager/list", a.handler(profileAPI.ListCoManagerCandidates, true)).Methods(http.MethodGet)
+
+	// CONNECTIONS
+	r.Handle("/user/{userID}/profile/connections", a.handler(profileAPI.MoveConnection, true)).Methods(http.MethodPut)
 }

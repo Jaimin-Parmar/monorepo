@@ -8,6 +8,7 @@ import (
 	"people-service/database"
 	"people-service/model"
 	"people-service/mongodatabase"
+	"people-service/util"
 )
 
 // Service - defines Profile service
@@ -21,6 +22,19 @@ type Service interface {
 	EditProfile(profile model.Profile) (map[string]interface{}, error)
 	UpdateProfileTagsNew(profileID string) error
 	DeleteProfile(userID string, profileID []string) (map[string]interface{}, error)
+	GenerateCode(userID, CallerprofileID int, payload model.ConnectionRequest) (map[string]interface{}, error)
+	DeleteCode(userID int, codes map[string]interface{}) (map[string]interface{}, error)
+	UpdateProfileSettings(profile model.UpdateProfileSettings, userID int) (map[string]interface{}, error)
+	UpdateShareableSettings(profileID int, shareableSettings model.ShareableSettings) (map[string]interface{}, error)
+	SendCoManagerRequest(profileID int, connReq map[string]interface{}) (map[string]interface{}, error)
+	AcceptCoManagerRequest(userID, profileID int, code string) (map[string]interface{}, error)
+	GetProfilesWithInfoByUserID(userID int) (map[string]interface{}, error)
+	FetchProfilesWithCoManager(profileID int, profiles []model.Profile, search, page, limit string) (map[string]interface{}, error)
+	FetchExternalProfiles(userID int, search, page, limit string) (map[string]interface{}, error)
+	GetPeopleInfo(profileID, requestType int, limit, page string, searchParameter ...string) (map[string]interface{}, error)
+	FetchBoards(profileID int, sectionType string) (map[string]interface{}, error)
+	ListAllOpenProfiles() (map[string]interface{}, error)
+	MoveConnection(payload map[string]interface{}, profileID int) (map[string]interface{}, error)
 }
 
 type service struct {
@@ -79,4 +93,70 @@ func (s *service) UpdateProfileTagsNew(profileID string) error {
 
 func (s *service) DeleteProfile(userID string, profileIDs []string) (map[string]interface{}, error) {
 	return deleteProfile(s.dbMaster, userID, profileIDs)
+}
+
+func (s *service) GenerateCode(userID, CallerprofileID int, payload model.ConnectionRequest) (map[string]interface{}, error) {
+	return generateCode(s.mongodb, s.dbMaster, s.storageService, userID, CallerprofileID, payload)
+}
+
+func (s *service) DeleteCode(userID int, codes map[string]interface{}) (map[string]interface{}, error) {
+	return deleteCode(s.mongodb, s.dbMaster, s.storageService, userID, codes)
+}
+
+func (s *service) UpdateProfileSettings(profile model.UpdateProfileSettings, userID int) (map[string]interface{}, error) {
+	return updateProfileSettings(s.dbMaster, profile, userID)
+}
+
+func (s *service) UpdateShareableSettings(profileID int, shareableSettings model.ShareableSettings) (map[string]interface{}, error) {
+	return updateShareableSettings(s.dbMaster, s.mongodb, profileID, shareableSettings)
+}
+
+func (s *service) SendCoManagerRequest(profileID int, connReq map[string]interface{}) (map[string]interface{}, error) {
+	return sendCoManagerRequest(s.dbMaster, s.mongodb, s.emailService, profileID, connReq)
+}
+
+func (s *service) AcceptCoManagerRequest(userID, profileID int, code string) (map[string]interface{}, error) {
+	return acceptCoManagerRequest(s.dbMaster, s.mongodb, s.storageService, userID, profileID, code)
+}
+
+func (s *service) GetProfilesWithInfoByUserID(userID int) (map[string]interface{}, error) {
+	return getProfilesWithInfoByUserID(s.storageService, s.dbMaster, userID)
+}
+
+func (s *service) FetchProfilesWithCoManager(profileID int, profiles []model.Profile, search, page, limit string) (map[string]interface{}, error) {
+	return fetchProfilesWithCoManager(s.storageService, s.dbMaster, s.mongodb, profileID, profiles, search, page, limit)
+}
+
+func (s *service) FetchExternalProfiles(userID int, search, page, limit string) (map[string]interface{}, error) {
+	return fetchExternalProfiles(s.storageService, s.dbMaster, userID, search, page, limit)
+}
+
+func (s *service) GetPeopleInfo(profileID, requestType int, limit, page string, searchParameter ...string) (map[string]interface{}, error) {
+	switch requestType {
+	case 1:
+		return fetchProfileConnections(s.mongodb, s.dbMaster, s.storageService, profileID, limit, page, searchParameter[0])
+	case 2:
+		return fetchBoardFollowers(s.dbMaster, s.storageService, profileID, limit, page, searchParameter[0], searchParameter[1])
+	case 3:
+		return fetchFollowingBoards(s.dbMaster, s.storageService, profileID, limit, page, searchParameter[0], searchParameter[1])
+	case 4:
+		return fetchConnectionRequests(s.mongodb, s.dbMaster, s.storageService, profileID, limit, page)
+	case 5:
+		return fetchArchivedConnections(s.mongodb, s.dbMaster, s.storageService, profileID, limit, page, searchParameter[0])
+	case 6:
+		return fetchBlockedConnections(s.mongodb, s.dbMaster, s.storageService, profileID, limit, page, searchParameter[0])
+	}
+	return util.SetResponse(nil, 0, "Request type invalid"), nil
+}
+
+func (s *service) FetchBoards(profileID int, sectionType string) (map[string]interface{}, error) {
+	return fetchBoards(s.dbMaster, profileID, sectionType)
+}
+
+func (s *service) ListAllOpenProfiles() (map[string]interface{}, error) {
+	return listAllOpenProfiles(s.dbMaster)
+}
+
+func (s *service) MoveConnection(payload map[string]interface{}, profileID int) (map[string]interface{}, error) {
+	return moveConnection(s.mongodb, payload, profileID)
 }
